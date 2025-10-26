@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: power-advisor
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: power-advisor-reader
+  namespace: default
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["batch"]
+  resources: ["jobs","cronjobs"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: power-advisor-reader-binding
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: power-advisor
+roleRef:
+  kind: Role
+  name: power-advisor-reader
+  apiGroup: rbac.authorization.k8s.io
