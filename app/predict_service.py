@@ -8,10 +8,15 @@ from typing import Dict, Any, List
 from k8s_encode import K8sEncoder, _flat_row    # reuse your encoder utils
 from models import InferenceRequest             # your schema
 
-path ="/opt/local-path-provisioner/pvc-dde8a16d-5550-41b8-ac85-e75d5e49b7fc_energy_podpower-data"
+# path ="/opt/local-path-provisioner/pvc-dde8a16d-5550-41b8-ac85-e75d5e49b7fc_energy_podpower-data"
 
-ENC_PATH = os.getenv("ENCODER_PATH", path+"/encoder.joblib")
-MOD_PATH = os.getenv("MODEL_PATH",   path+"/knn_energy.joblib")
+# ENC_PATH = os.getenv("ENCODER_PATH", path+"/encoder.joblib")
+# MOD_PATH = os.getenv("MODEL_PATH",   path+"/knn_energy.joblib")
+
+ENC_PATH = os.getenv("ENCODER_PATH", "/artifacts/encoder.joblib")
+MOD_PATH = os.getenv("MODEL_PATH",   "/artifacts/knn_energy.joblib")
+
+
 
 app = FastAPI()
 enc = K8sEncoder.load(ENC_PATH)
