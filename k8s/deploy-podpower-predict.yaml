@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: podpower-predict
+  namespace: kubeintellect
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: podpower-predict}
+  template:
+    metadata:
+      labels: {app: podpower-predict}
+    spec:
+      containers:
+      - name: api
+        image: ghcr.io/mskazemi/k8spodpcp:latest
+        command: ["uvicorn"]
+        args: ["predict_service:app", "--host", "0.0.0.0", "--port", "8000"]
+        env:
+        - name: ENCODER_PATH
+          value: /artifacts/encoder.joblib
+        - name: MODEL_PATH
+          value: /artifacts/knn_power.joblib
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - name: artifacts
+          mountPath: /artifacts
+      volumes:
+      - name: artifacts
+        persistentVolumeClaim:
+          claimName: podpower-data   # the same PVC with your .joblib files
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: podpower-predict
+  namespace: kubeintellect
+spec:
+  selector: {app: podpower-predict}
+  ports:
+  - port: 80
+    targetPort: 8000

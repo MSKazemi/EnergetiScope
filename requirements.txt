@@ -6,4 +6,6 @@ scikit-learn
 joblib 
 pyarrow 
 pandas
+fastapi 
+uvicorn
 
