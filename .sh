@@ -6,7 +6,7 @@ python3 k8s_collect.py watch \
 --suppress-tls-warnings > ./data/inference_requests.ndjson
 
 python3 kepler_labels.py \
-  --prom http://prometheus.local \
+  --prom http://prometheus.n1.local \
   --owner-source auto \
   --mode window \
   --start $(date -u -d '5 days ago' +%s) \

@@ -80,8 +80,8 @@ python k8s_collect.py watch --kinds Deployment Job CronJob --emit-initial
 ### Only kubeintellect, suppress TLS warning (dev):
 
 ```bash
-python3 k8s_collect.py watch \
---kinds Deployment Job CronJob Pod \
+python3 k8s_collect.py watch watch \
+--kinds Deployment ReplicaSet Job CronJob Pod \
 --emit-initial \
 --suppress-tls-warnings > ./data/inference_requests.ndjson
 ```
@@ -99,7 +99,7 @@ python3 k8s_collect.py watch \
 
 ```bash
    python3 kepler_labels.py \
-     --prom http://prometheus.local \
+     --prom http://prometheus.n1.local \
      --owner-source auto \
      --mode window \
      --start $(date -u -d '6 hours ago' +%s) \
