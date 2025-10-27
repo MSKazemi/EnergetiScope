@@ -1,0 +1,18 @@
+# ===========================================
+# NAMESPACE & STORAGE
+# ===========================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: energy
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: podpower-data
+  namespace: energy
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 10Gi
