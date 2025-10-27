@@ -1,0 +1,214 @@
+# ===========================================
+# NAMESPACE & STORAGE
+# ===========================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: energy
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: podpower-data
+  namespace: energy
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 10Gi
+
+# ===========================================
+# RBAC (service account + permissions)
+# ===========================================
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: podpower-read
+  namespace: energy
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: podpower-read
+rules:
+- apiGroups: ["", "apps", "batch"]
+  resources: ["pods", "deployments", "jobs", "cronjobs"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: podpower-read
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: podpower-read
+subjects:
+- kind: ServiceAccount
+  name: podpower-read
+  namespace: energy
+
+# ===========================================
+# JOB 1: Collect current workload snapshots
+# ===========================================
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: collect-snapshot
+  namespace: energy
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      serviceAccountName: podpower-read
+      restartPolicy: Never
+      containers:
+      - name: collect
+        image: ghcr.io/mskazemi/k8spodpcp:latest
+        imagePullPolicy: Always
+        args:
+          - /bin/sh
+          - -c
+          - |
+            set -e
+            echo "▶ Step 1: Collecting live K8s objects"
+            python3 k8s_collect.py watch \
+              --kinds Deployment Job CronJob Pod \
+              --emit-initial \
+              --namespaces kubeintellect \
+              --suppress-tls-warnings \
+              --output /data/in.ndjson
+
+            echo "▶ Step 2: Fitting or reusing encoder"
+            if [ ! -f /data/encoder.joblib ]; then
+              python3 k8s_encode.py fit \
+                --input /data/in.ndjson \
+                --out /data/encoder.joblib \
+                --no-sbert
+            fi
+
+            echo "▶ Step 3: Transforming features"
+            python3 k8s_encode.py transform \
+              --input /data/in.ndjson \
+              --encoder /data/encoder.joblib \
+              --out /data/features.parquet
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: podpower-data
+
+# ===========================================
+# JOB 2: Build labels from Kepler metrics
+# ===========================================
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-labels
+  namespace: energy
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: labels
+        image: ghcr.io/mskazemi/k8spodpcp:latest
+        imagePullPolicy: Always
+        args:
+          - python3
+          - kepler_labels.py
+          - --prom
+          - http://prometheus.kube-system.svc:9090
+          - --mode
+          - job
+          - --start
+          - "2025-10-25T00:00:00Z"
+          - --end
+          - "2025-10-26T00:00:00Z"
+          - --ns
+          - kubeintellect
+          - --out
+          - /data/labels.parquet
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: podpower-data
+
+# ===========================================
+# JOB 3: Join features and labels
+# ===========================================
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: join-train-rows
+  namespace: energy
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: join
+        image: ghcr.io/mskazemi/k8spodpcp:latest
+        imagePullPolicy: Always
+        args:
+          - python3
+          - join_features_labels.py
+          - --features
+          - /data/features.parquet
+          - --labels
+          - /data/labels.parquet
+          - --out
+          - /data/train_rows.parquet
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: podpower-data
+
+# ===========================================
+# JOB 4: Train power prediction model
+# ===========================================
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: train-power
+  namespace: energy
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: train
+        image: ghcr.io/mskazemi/k8spodpcp:latest
+        imagePullPolicy: Always
+        args:
+          - python3
+          - train_power.py
+          - --train
+          - /data/train_rows.parquet
+          - --target
+          - avg_power_w
+          - --out
+          - /data/knn_energy.joblib
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: podpower-data
