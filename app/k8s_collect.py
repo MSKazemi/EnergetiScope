@@ -436,9 +436,9 @@ def list_and_emit_initial(
                 continue
             if namespaces and ns not in namespaces:
                 continue
-                    tmpl = _cronjob_pod_template(d)
-                    if tmpl:
-                        yield podtemplate_to_request(ns, "CronJob", name, tmpl)
+            tmpl = _cronjob_pod_template(d)
+            if tmpl:
+                yield podtemplate_to_request(ns, "CronJob", name, tmpl)
     if "Pod" in kinds:
         for obj in api_core.list_pod_for_all_namespaces().items:
             d = obj.to_dict()
