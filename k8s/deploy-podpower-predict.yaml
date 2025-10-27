@@ -20,7 +20,7 @@ spec:
         - name: ENCODER_PATH
           value: /artifacts/encoder.joblib
         - name: MODEL_PATH
-          value: /artifacts/knn_power.joblib
+          value: /artifacts/knn_energy.joblib
         ports:
         - containerPort: 8000
         volumeMounts:
