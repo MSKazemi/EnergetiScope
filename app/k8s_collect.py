@@ -113,6 +113,13 @@ def _vol_type(v: Dict) -> str:
     return "other"
 
 
+def _cronjob_pod_template(d: Dict) -> Dict:
+    spec = d.get("spec") or {}
+    jt = spec.get("jobTemplate") or spec.get("job_template") or {}
+    jt_spec = jt.get("spec") or {}
+    return jt_spec.get("template") or {}
+
+
 def _to_container_spec(c: Dict) -> ContainerSpec:
     res = c.get("resources", {}) or {}
     req = res.get("requests", {}) or {}
@@ -343,8 +350,9 @@ def stream_inference_requests(
             tmpl = obj["spec"]["template"]
             yield podtemplate_to_request(ns, "Job", name, tmpl, parent_spec=obj["spec"])
         elif kind == "CronJob":
-            tmpl = obj["spec"]["jobTemplate"]["spec"]["template"]
-            yield podtemplate_to_request(ns, "CronJob", name, tmpl)
+            tmpl = _cronjob_pod_template(obj)
+            if tmpl:
+                yield podtemplate_to_request(ns, "CronJob", name, tmpl)
         elif kind == "Pod":
             yield pod_to_request(obj)
 
@@ -428,9 +436,9 @@ def list_and_emit_initial(
                 continue
             if namespaces and ns not in namespaces:
                 continue
-            tmpl = d["spec"]["jobTemplate"]["spec"]["template"]
-            yield podtemplate_to_request(ns, "CronJob", name, tmpl)
-
+                    tmpl = _cronjob_pod_template(d)
+                    if tmpl:
+                        yield podtemplate_to_request(ns, "CronJob", name, tmpl)
     if "Pod" in kinds:
         for obj in api_core.list_pod_for_all_namespaces().items:
             d = obj.to_dict()
