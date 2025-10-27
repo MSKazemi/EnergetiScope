@@ -23,12 +23,11 @@ spec:
           - |
             set -e
             echo "▶ Step 1: Collecting live K8s objects"
-            python3 k8s_collect.py watch \
+            timeout 30s python3 k8s_collect.py watch \
               --kinds Deployment Job CronJob Pod \
               --emit-initial \
-              --namespaces kubeintellect \
               --suppress-tls-warnings \
-              --output /data/in.ndjson
+              --output /data/in.ndjson || code=$?; code=${code:-0}; if [ "$code" != "0" ] && [ "$code" != "124" ]; then exit "$code"; fi
 
             echo "▶ Step 2: Fitting or reusing encoder"
             if [ ! -f /data/encoder.joblib ]; then

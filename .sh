@@ -1,5 +1,18 @@
 #!/bin/bash
 
+python3 k8s_collect.py watch   --kinds Deployment Job CronJob Pod     --emit-initial   --output ./data/inference_requests.ndjson 
+python3 k8s_collect.py watch --emit-initial --output ./data/inference_requests.ndjson
+python3 k8s_collect.py from-file ./my-deployment.yaml
+
+
+
+python3 k8s_collect.py watch \
+  --kinds Deployment Job CronJob Pod \
+  --emit-initial \
+  --output ./data/inference_requests.ndjson
+
+
+
 python3 k8s_collect.py watch \
 --kinds Deployment Job CronJob Pod \
 --emit-initial \

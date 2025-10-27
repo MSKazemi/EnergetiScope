@@ -22,7 +22,7 @@ spec:
           - --train
           - /data/train_rows.parquet
           - --target
-          - avg_power_w
+          - total_energy_j
           - --out
           - /data/knn_energy.joblib
         volumeMounts:
