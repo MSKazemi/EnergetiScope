@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # ---- app code ----
 # copy the app directory preserving structure
-COPY app/* /app/
+COPY . /app/
 
 # Default: just print help
 CMD ["python", "k8s_collect.py", "-h"]
