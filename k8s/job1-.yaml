@@ -15,8 +15,10 @@ spec:
       restartPolicy: Never
       containers:
       - name: collect
-        image: ghcr.io/mskazemi/k8spodpcp:latest
-        imagePullPolicy: Always
+        # Replace sha-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX with the commit-specific tag
+        # emitted by CI for this build (ghcr.io/...:sha-<commit-sha>).
+        image: ghcr.io/mskazemi/k8spodpcp:sha-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        imagePullPolicy: IfNotPresent
         args:
           - /bin/sh
           - -c
