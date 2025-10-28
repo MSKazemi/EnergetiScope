@@ -10,7 +10,9 @@ spec:
       serviceAccountName: podpower-read
       containers:
       - name: collector
-        image: ghcr.io/mskazemi/k8spodpcp:latest
+        # Replace sha-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX with the commit-specific tag
+        # produced by CI (ghcr image sha). Avoid using mutable tags like :latest.
+        image: ghcr.io/mskazemi/k8spodpcp:sha-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         args:
           - python
           - k8s_collect.py
