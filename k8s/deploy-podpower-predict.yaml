@@ -13,7 +13,9 @@ spec:
     spec:
       containers:
       - name: api
-        image: ghcr.io/mskazemi/k8spodpcp:latest
+        # Replace sha-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX with the tag produced
+        # for the commit you are deploying (see CI docker/metadata-action output).
+        image: ghcr.io/mskazemi/k8spodpcp:sha-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         command: ["uvicorn"]
         args: ["predict_service:app", "--host", "0.0.0.0", "--port", "8000"]
         env:
