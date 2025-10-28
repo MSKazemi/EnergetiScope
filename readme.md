@@ -37,7 +37,7 @@ kepler_container_joules_total
 * Encode → encoder.joblib, features.parquet (done/next)
 * Label from Kepler → kepler_labels.parquet
 * Join → train_rows.parquet
-* Train → knn_power.joblib (+ CV metrics printed)
+* Train → knn_power.joblib (+ CV metrics printed) (knn_energy.joblib)
 * Predict → JSON with pred_avg_power_w (and later energy if you choose that target)
 
 #### Next Steps
@@ -135,8 +135,8 @@ python join_features_labels.py \
 ```bash
 python3 train_power.py \
   --train ./data/train_rows.parquet \
-  --target avg_power_w \
-  --out ./artifacts/knn_power.joblib
+  --target total_energy_j \
+  --out ./artifacts/knn_energy.joblib
 ```
 
 
@@ -149,7 +149,7 @@ Use your latest NDJSON (or collect again), then:
 ```bash
 python predict_k8s.py \
   --encoder ./artifacts/encoder.joblib \
-  --model   ./artifacts/knn_power.joblib \
+  --model   ./artifacts/knn_energy.joblib \
   --input   ./data/inference_requests.ndjson
 ```
 
@@ -159,7 +159,7 @@ python predict_k8s.py \
 ```bash
 python predict_k8s.py \
   --encoder ./artifacts/encoder.joblib \
-  --model ./artifacts/knn_power.joblib \
+  --model ./artifacts/knn_energy.joblib \
   --input ./data/inference_requests.ndjson
 ```
 
@@ -184,7 +184,13 @@ If you want a quick advisory loop, you can write a tiny patcher that adds:
 ### Quick Troubleshooting
 
 * If `train_rows.parquet` has **0 rows**, the join keys didn’t match. Use a broader join (drop `_spec_hash`) or ensure your features and labels cover the same workloads/time.
-* If `predict_k8s.py` errors on encoder/model paths, double-check that `./artifacts/encoder.joblib` and `./artifacts/knn_power.joblib` exist.
+* If `predict_k8s.py` errors on encoder/model paths, double-check that `./artifacts/encoder.joblib` and `./artifacts/knn_energy.joblib` exist.
 * If SBERT model download is blocked, keep using `--no-sbert` for now; you can re-fit later with SBERT turned on.
 
 Want me to add the optional **annotation patcher** (writes predictions back to the Deployment/CronJob/Job template) next?
+
+
+
+---
+### Example:
+ 
