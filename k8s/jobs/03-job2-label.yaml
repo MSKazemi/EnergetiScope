@@ -15,7 +15,7 @@ spec:
       containers:
         - name: labels
           image: ghcr.io/mskazemi/k8spodpcp:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           args:
             - python3
             - kepler_labels.py

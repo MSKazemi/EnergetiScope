@@ -15,7 +15,7 @@ spec:
       containers:
         - name: join
           image: ghcr.io/mskazemi/k8spodpcp:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           args:
             - python3
             - join_features_labels.py
