@@ -9,7 +9,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}   # ghcr.io/<owner>/<repo>
+  IMAGE_NAME: mskazemi/k8sPodPCP
 
 permissions:
   contents: read

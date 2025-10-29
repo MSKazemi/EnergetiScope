@@ -56,7 +56,7 @@ metadata:
     kubernetes.io/ingress.class: nginx
 spec:
   rules:
-    - host: podpower.example.com
+    - host: podpower.local
       http:
         paths:
           - path: /

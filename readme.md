@@ -11,6 +11,22 @@ helm upgrade --install kube-state-metrics \
 
 ```
 
+
+
+✦ Based on the contents of the files:
+
+  deploy-podpower-collector.yaml: This file defines a Kubernetes Deployment that runs a data collector. Its role is to watch for changes to Deployment, Job, and CronJob
+  resources within the energy namespace and send that information to the podpower-predict service.
+
+  deploy-podpower-predict.yaml: This file defines three resources:
+   1. A Deployment that runs a prediction service using uvicorn. It loads a machine learning model and an encoder to make predictions.
+   2. A Service of type ClusterIP that exposes the prediction service within the Kubernetes cluster.
+   3. An Ingress resource that exposes the prediction service outside of the cluster at the hostname podpower.local.
+
+  In summary, the collector gathers data from the cluster and the predict service uses that data to make prediction
+
+
+
 ### Sanity Checks
 
 Do you actually have Kepler metrics in Prometheus?
