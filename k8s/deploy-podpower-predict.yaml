@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: ghcr.io/mskazemi/k8sPodPCP:latest
+          image: ghcr.io/mskazemi/k8spodpcp:latest
           imagePullPolicy: IfNotPresent
           command: ["uvicorn"]
           args: ["predict_service:app", "--host", "0.0.0.0", "--port", "8000"]

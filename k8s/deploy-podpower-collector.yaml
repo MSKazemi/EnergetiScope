@@ -16,7 +16,7 @@ spec:
       serviceAccountName: podpower-read
       containers:
         - name: collector
-          image: ghcr.io/mskazemi/k8sPodPCP:latest
+          image: ghcr.io/mskazemi/k8spodpcp:latest
           imagePullPolicy: IfNotPresent
           args:
             - python

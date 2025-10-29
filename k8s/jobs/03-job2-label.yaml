@@ -14,7 +14,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: labels
-          image: ghcr.io/mskazemi/k8sPodPCP:latest
+          image: ghcr.io/mskazemi/k8spodpcp:latest
           imagePullPolicy: IfNotPresent
           args:
             - python3

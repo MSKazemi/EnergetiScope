@@ -1,30 +1,30 @@
-name: cd-deploy
-on:
-  push:
-    branches: [ "main" ]
+# name: cd-deploy
+# on:
+#   push:
+#     branches: [ "main" ]
 
-jobs:
-  deploy:
-    runs-on: [self-hosted, Linux, X64]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+# jobs:
+#   deploy:
+#     runs-on: [self-hosted, Linux, X64]
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
 
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v4
-
-
-      - name: Use runner kubeconfig
-        run: echo "KUBECONFIG=/home/mohsen/kubeconfig-ci.yaml" >> $GITHUB_ENV
+#       - name: Setup kubectl
+#         uses: azure/setup-kubectl@v4
 
 
-      # OPTIONAL: set the image tag once in base
-      # - run: |
-      #     TAG=sha-${{ github.sha }}
-      #     cd deploy/base
-      #     kustomize edit set image ghcr.io/${{ github.repository }}:$TAG
+#       - name: Use runner kubeconfig
+#         run: echo "KUBECONFIG=/home/mohsen/kubeconfig-ci.yaml" >> $GITHUB_ENV
 
-      - name: Apply overlay
-        run: |
-          kubectl apply -k deploy/overlays/prod
-          kubectl rollout status deploy/podpower-predict -n energy --timeout=180s
+
+#       # OPTIONAL: set the image tag once in base
+#       # - run: |
+#       #     TAG=sha-${{ github.sha }}
+#       #     cd deploy/base
+#       #     kustomize edit set image ghcr.io/${{ github.repository }}:$TAG
+
+#       - name: Apply overlay
+#         run: |
+#           kubectl apply -k deploy/overlays/prod
+#           kubectl rollout status deploy/podpower-predict -n energy --timeout=180s

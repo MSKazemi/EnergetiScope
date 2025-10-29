@@ -15,7 +15,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: collect
-          image: ghcr.io/mskazemi/k8sPodPCP:latest
+          image: ghcr.io/mskazemi/k8spodpcp:latest
           imagePullPolicy: IfNotPresent
           args:
             - /bin/sh
