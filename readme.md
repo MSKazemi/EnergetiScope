@@ -1,15 +1,7 @@
-## Pormetheus & Kepler
+kubectl -n energy delete job build-labels --ignore-not-found
+kubectl -n energy apply -f k8s/jobs/03-job2-label.yaml
+kubectl -n energy logs -f job/build-labels -f
 
-```bash
-helm upgrade --install kps prometheus-community/kube-prometheus-stack \
-  --namespace monitoring --create-namespace \
-  --set kube-state-metrics.enabled=true
-
-helm upgrade --install kube-state-metrics \
-  prometheus-community/kube-state-metrics \
-  -n monitoring --create-namespace
-
-```
 
 
 
@@ -114,18 +106,28 @@ python3 k8s_collect.py watch \
 ## 2) Export labels from Kepler (Prometheus) → Parquet
 
 ```bash
-   python3 kepler_labels.py \
-     --prom http://prometheus.n1.local \
+   python3 app/kepler_labels.py \
+     --prom http://prometheus.lpt.local \
      --owner-source auto \
      --mode window \
      --start $(date -u -d '6 hours ago' +%s) \
      --end   $(date -u +%s) \
-     --out ./data/kepler_labels.parquet
+     --out ./data/labels.parquet
 ```
 
 With `--owner-source auto`, it will:
 * Try `kube_pod_owner` first.
 * If missing, query the live Kubernetes API to map each pod to its owner Deployment/Job/CronJob.
+
+****### Window vs Job labels
+
+- **window mode**: emits one row per timestamp per pod. Columns include `ts`, `avg_power_w`, and per-interval `energy_step_j`. There is no `total_energy_j`.
+- **job mode**: aggregates each pod's lifetime into a single row. It computes mean `avg_power_w` and sums `energy_step_j` into `total_energy_j`.
+
+Pick the mode based on your training target:
+
+- **If training with `--target total_energy_j`**, generate labels with `--mode job` so the column exists.
+- **If training with `--target energy_step_j` or `avg_power_w`**, `--mode window` is fine; or aggregate windows to create totals before training if you want `total_energy_j`.
 
 ## 2) Join features ↔ labels
 Proceed to the `join_features_labels.py` step for training.
@@ -133,7 +135,7 @@ Proceed to the `join_features_labels.py` step for training.
 ```bash
 python join_features_labels.py \
   --features ./data/features.parquet \
-  --labels   ./data/kepler_labels.parquet \
+  --labels   ./data/labels.parquet \
   --out      ./data/train_rows.parquet
 ```
 
@@ -142,7 +144,7 @@ python join_features_labels.py \
 ```bash
 python join_features_labels.py \
   --features ./data/features.parquet \
-  --labels   ./data/kepler_labels.parquet \
+  --labels   ./data/labels.parquet \
   --out      ./data/train_rows.parquet
 ```
 

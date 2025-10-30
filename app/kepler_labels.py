@@ -67,7 +67,7 @@ def get_owner_map_via_k8s(namespaces=None) -> pd.DataFrame:
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--prom", default="http://prometheus.n1.local", help="Prometheus base URL")
+    p.add_argument("--prom", default="http://prometheus.lpt.local", help="Prometheus base URL")
     p.add_argument("--owner-source", choices=["prom","k8s","auto"], default="auto",
                    help="Where to get pod→owner mapping. 'auto' tries Prom first then K8s API. Default: k8s.")
     p.add_argument("--mode", choices=["job","window"], default="window")

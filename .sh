@@ -24,12 +24,12 @@ python3 kepler_labels.py \
   --mode window \
   --start $(date -u -d '5 days ago' +%s) \
   --end   $(date -u +%s) \
-  --out ./data/kepler_labels.parquet
+  --out ./data/labels.parquet
   --suppress-tls-warnings
 
 
 
 python3 join_features_labels.py \
   --features ./data/features.parquet \
-  --labels   ./data/kepler_labels.parquet \
+  --labels   ./data/labels.parquet \
   --out      ./data/train_rows.parquet

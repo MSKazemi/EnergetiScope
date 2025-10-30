@@ -11,26 +11,21 @@ spec:
   backoffLimit: 1
   template:
     spec:
+      serviceAccountName: podpower-read
       restartPolicy: Never
       containers:
         - name: labels
           image: ghcr.io/mskazemi/k8spodpcp:latest
           imagePullPolicy: Always
+          command: ["bash", "-lc"]
           args:
-            - python3
-            - /app/kepler_labels.py
-            - --prom
-            - http://prometheus-operated.prometheus.svc:9090
-            - --mode
-            - job
-            - --start
-            - "2025-10-25T00:00:00Z"
-            - --end
-            - "2025-10-26T00:00:00Z"
-            - --ns
-            - kubeintellect
-            - --out
-            - /app/data/labels.parquet
+            - >
+              python3 /app/kepler_labels.py
+              --prom http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+              --mode job
+              --start $(date -u -d '6 hours ago' +%s)
+              --end   $(date -u +%s)
+              --out /app/data/labels.parquet
           volumeMounts:
             - name: data
               mountPath: /app/data
