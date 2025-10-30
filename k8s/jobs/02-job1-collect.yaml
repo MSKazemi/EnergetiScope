@@ -23,7 +23,7 @@ spec:
             - |
               set -e
               echo "▶ Step 1: Collecting live K8s objects"
-              timeout 30s python3 k8s_collect.py watch \
+              timeout 30s python3 /app/k8s_collect.py watch \
                 --kinds Deployment Job CronJob Pod \
                 --emit-initial \
                 --suppress-tls-warnings \
@@ -31,14 +31,14 @@ spec:
 
               echo "▶ Step 2: Fitting or reusing encoder"
               if [ ! -f /data/encoder.joblib ]; then
-                python3 k8s_encode.py fit \
+                python3 /app/k8s_encode.py fit \
                   --input /data/in.ndjson \
                   --out /data/encoder.joblib \
                   --no-sbert
               fi
 
               echo "▶ Step 3: Transforming features"
-              python3 k8s_encode.py transform \
+              python3 /app/k8s_encode.py transform \
                 --input /data/in.ndjson \
                 --encoder /data/encoder.joblib \
                 --out /data/features.parquet

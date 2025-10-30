@@ -13,3 +13,6 @@ artifacts/
 dist/
 build/
 *.log
+.vscode/
+.github/
+.venv/
