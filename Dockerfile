@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+RUN mkdir -p /app/data
+RUN mkdir -p /app/artifacts
+
 
 # ---- dependency layer (cached) ----
 # copy ONLY requirements first to leverage caching

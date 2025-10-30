@@ -18,16 +18,16 @@ spec:
           imagePullPolicy: Always
           args:
             - python3
-            - train_power.py
+            - /app/train_power.py
             - --train
-            - /data/train_rows.parquet
+            - /app/data/train_rows.parquet
             - --target
             - total_energy_j
             - --out
-            - /data/knn_energy.joblib
+            - /app/data/knn_energy.joblib
           volumeMounts:
             - name: data
-              mountPath: /data
+              mountPath: /app/data
       volumes:
         - name: data
           persistentVolumeClaim:

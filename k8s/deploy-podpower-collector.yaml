@@ -20,7 +20,7 @@ spec:
           imagePullPolicy: Always
           args:
             - python
-            - k8s_collect.py
+            - /app/k8s_collect.py
             - watch
             - --kinds
             - Deployment Job CronJob

@@ -18,7 +18,7 @@ spec:
           imagePullPolicy: Always
           args:
             - python3
-            - kepler_labels.py
+            - /app/kepler_labels.py
             - --prom
             - http://prometheus-operated.prometheus.svc:9090
             - --mode
@@ -30,10 +30,10 @@ spec:
             - --ns
             - kubeintellect
             - --out
-            - /data/labels.parquet
+            - /app/data/labels.parquet
           volumeMounts:
             - name: data
-              mountPath: /data
+              mountPath: /app/data
       volumes:
         - name: data
           persistentVolumeClaim:
