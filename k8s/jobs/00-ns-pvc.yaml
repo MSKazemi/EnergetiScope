@@ -12,8 +12,8 @@ metadata:
   name: podpower-data
   namespace: energy
 spec:
-  accessModes:
-    - ReadWriteOnce
+  storageClassName: local-path
+  accessModes: [ "ReadWriteOnce" ]
   resources:
     requests:
-      storage: 1Gi
+      storage: 5Gi

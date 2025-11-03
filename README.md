@@ -125,33 +125,30 @@ Install Prometheus and Kepler first (see `prometheus.md` and `kepler.md`). Then 
 ```bash
 # Namespace + PVC
 kubectl apply -f k8s/jobs/00-ns-pvc.yaml
+# Maybe need to update storage class to local-path or
 
 # RBAC for reading cluster objects
 kubectl apply -f k8s/jobs/01-rbac.yaml
 
 # Job 1: collect + encode
 kubectl apply -f k8s/jobs/02-job1-collect.yaml
-kubectl -n energy wait --for=condition=complete --timeout=5m job/collect-snapshot
 
 # Job 2: build labels from Kepler
 kubectl apply -f k8s/jobs/03-job2-label.yaml
-kubectl -n energy wait --for=condition=complete --timeout=30m job/build-labels
+# maybe need to update the prometheus endpoint
+
 
 # Job 3: join features and labels
 kubectl apply -f k8s/jobs/04-job3-dataset.yaml
-kubectl -n energy wait --for=condition=complete --timeout=30m job/join-train-rows
 
 # Job 4: train model
 kubectl apply -f k8s/jobs/05-job4-train.yaml
-kubectl -n energy wait --for=condition=complete --timeout=60m job/train-power
 
 # Deploy predictor API (Service + optional Ingress)
 kubectl apply -f k8s/deploy-podpower-predict.yaml
-kubectl -n energy wait --for=condition=available --timeout=10m deployment/podpower-predict
 
 # Deploy collector (watches cluster and optionally POSTs to API)
 kubectl apply -f k8s/deploy-podpower-collector.yaml
-kubectl -n energy wait --for=condition=available --timeout=10m deployment/podpower-collector
 ```
 
 ## ⚙️ Configuration

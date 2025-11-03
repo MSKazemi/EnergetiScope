@@ -21,7 +21,8 @@ spec:
           args:
             - >
               python3 /app/kepler_labels.py
-              --prom http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+              # --prom http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+              --prom http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
               --mode job
               --start $(date -u -d '6 hours ago' +%s)
               --end   $(date -u +%s)
