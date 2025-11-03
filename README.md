@@ -55,6 +55,19 @@ uvicorn app/predict_service:app --host 0.0.0.0 --port 8000
 # open http://localhost:8000/docs
 ```
 
+### FastAPI endpoints (app/predict_service.py)
+
+- **POST `/predict`**: Accepts an `InferenceRequest` JSON (same schema produced by `app/k8s_collect.py`) and returns a `PredictOut` with `pred_energy_step_j` and metadata.
+- **POST `/infer/from-yaml`**: Accepts Kubernetes YAML (`Content-Type: text/plain`) for `Deployment`/`Job`/`CronJob` and returns the derived `InferenceRequest` JSON(s).
+- **POST `/predict/from-yaml`**: Accepts Kubernetes YAML (`Content-Type: text/plain`) and returns a `PredictOut` directly.
+
+Service auto-loads artifacts at startup using env vars:
+
+- `ENCODER_PATH` (default: `/artifacts/encoder.joblib`)
+- `MODEL_PATH` (default: `/artifacts/knn_energy.joblib`)
+
+Swagger UI is available at `/docs` and OpenAPI JSON at `/openapi.json`.
+
 ### Local CLI workflow (collect → encode → label → join → train → predict)
 
 ```bash
@@ -151,6 +164,42 @@ kubectl apply -f k8s/deploy-podpower-predict.yaml
 kubectl apply -f k8s/deploy-podpower-collector.yaml
 ```
 
+#### Example: CronJob that periodically pre-scores a Deployment
+
+Use a `CronJob` to predict energy for an existing Deployment on a schedule by piping the live manifest into the API. Ensure the Service name (`podpower-predict` below) matches your install, and the ServiceAccount has RBAC to read the target resource.
+
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: podpower-prescore
+  namespace: default
+spec:
+  schedule: "*/10 * * * *"  # every 10 minutes
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: podpower-reader
+          restartPolicy: OnFailure
+          containers:
+          - name: prescore
+            image: bitnami/kubectl:1.29
+            command: ["/bin/sh","-c"]
+            args:
+            - |
+              DEPLOY=nginx-deployment
+              NS=default
+              kubectl get deploy ${DEPLOY} -n ${NS} -o yaml | \
+              curl -sS -X POST http://podpower-predict.default.svc.cluster.local:8000/predict/from-yaml \
+                -H 'Content-Type: text/plain' --data-binary @- | jq .
+```
+
+Notes:
+
+- Replace `podpower-predict.default.svc.cluster.local:8000` with your Service DNS/port.
+- Create a minimal RBAC allowing `get` on `deployments` in the target namespace for `podpower-reader`.
+
 ## ⚙️ Configuration
 
 | Variable       | Default                         | Description                                  |
@@ -183,6 +232,53 @@ python app/k8s_collect.py from-file ./example/example.yaml
 
 - **Prometheus / Kepler sanity checks**
   - Ensure Prom has data for: `kube_pod_owner`, `kepler_container_power_watt`, `kepler_container_joules_total`
+
+- **Python (use in schedulers/workflows)**
+
+  ```python
+  import requests
+
+  # Predict directly from a Kubernetes YAML manifest
+  yaml_text = open("example/example.yaml", "r", encoding="utf-8").read()
+  r = requests.post(
+      "http://localhost:8000/predict/from-yaml",
+      data=yaml_text,
+      headers={"Content-Type": "text/plain"},
+      timeout=30,
+  )
+  r.raise_for_status()
+  print(r.json())  # {'pred_energy_step_j': ..., 'workload_kind': 'Deployment', ...}
+
+  # Or send an InferenceRequest JSON directly to /predict
+  ir = {
+      # Minimal example; prefer generating with app/k8s_collect.py
+      "workload_kind": "Deployment",
+      "workload_name": "nginx",
+      "namespace": "default",
+      "pod_spec": {
+          "containers": [{"name": "nginx", "image": "nginx:1.25"}]
+      }
+  }
+  r2 = requests.post(
+      "http://localhost:8000/predict",
+      json=ir,
+      timeout=30,
+  )
+  r2.raise_for_status()
+  print(r2.json())
+  ```
+
+- **Response shape**
+
+  ```json
+  {
+    "pred_energy_step_j": 123.4,
+    "workload_kind": "Deployment",
+    "workload_name": "nginx",
+    "namespace": "default",
+    "spec_hash": "6c7c..."
+  }
+  ```
 
 ## 🧪 Testing & Quality
 
