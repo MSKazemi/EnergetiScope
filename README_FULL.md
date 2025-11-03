@@ -289,14 +289,6 @@ python app/k8s_collect.py from-file ./example/example.yaml
 - Optional mutating webhook to annotate workloads with predicted power
 - Model registry and automated retraining
 
-## 🤝 Contributing
-
-Contributions are welcome. Please open an issue to discuss major changes.
-
-## 🔐 Security
-
-Please report vulnerabilities via a private issue.
-
 ## 🧾 License
 
 > **TODO:** Add a `LICENSE` file (recommended: Apache-2.0 or MIT).

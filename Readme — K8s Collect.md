@@ -283,27 +283,5 @@ spec:
 
 ---
 
-## 🚑 Troubleshooting
-
-* **`Kubernetes configuration could not be loaded`**: Ensure a valid kubeconfig or run in-cluster with proper ServiceAccount.
-* **`requests not installed; cannot POST`**: Install `requests` or omit `--post`.
-* **TLS errors / self-signed certs**: Provide `--ca-file` and/or `--verify-ssl false` (dev only). Use `--suppress-tls-warnings` to hide warnings.
-* **No events?** Add `--emit-initial`, verify RBAC, and confirm that your kinds/namespaces match what’s running.
-
----
-
-## 🧭 FAQ
-
-**Q: Can it watch only one namespace?**
-Yes: `--namespaces my-ns` (you can pass multiple).
-
-**Q: Can I include Pods directly?**
-Yes: add `Pod` to `--kinds`.
-
-**Q: Does it exit on POST errors?**
-No, it logs a warning and continues.
-
-**Q: How are duplicates handled?**
-`SeenCache` suppresses repeat emissions for the same `(ns, kind, name, resourceVersion)` within a 10‑second TTL.
 
 
