@@ -24,8 +24,8 @@ spec:
               # --prom http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
               --prom http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
               --mode job
-              --start 2025-10-02T00:00:00Z
-              --end 2025-11-03T00:00:00Z
+              --start 2025-11-03T14:00:00Z
+              --end 2025-11-03T15:00:00Z
               --out /app/data/labels.parquet
           volumeMounts:
             - name: data
