@@ -11,11 +11,11 @@ spec:
   backoffLimit: 1
   template:
     spec:
-      serviceAccountName: podpower-read
+      serviceAccountName: energetiscope-read
       restartPolicy: Never
       containers:
         - name: collect
-          image: ghcr.io/mskazemi/k8spodpcp:latest
+          image: ghcr.io/mskazemi/energetiscope:latest
           imagePullPolicy: Always
           args:
             - /bin/sh
@@ -48,4 +48,4 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: podpower-data
+            claimName: energetiscope-data

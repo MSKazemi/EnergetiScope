@@ -20,11 +20,11 @@ from pydantic import ValidationError
 # If you have your logger, you can import it; otherwise basic prints will work.
 try:
     from app.utils.logger_config import setup_logging
-    logger = setup_logging(app_name="k8s-pod-power")
+    logger = setup_logging(app_name="energetiscope")
 except Exception:
     import logging
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    logger = logging.getLogger("k8s-pod-power")
+    logger = logging.getLogger("energetiscope")
 
 from models import InferenceRequest, ContainerSpec
 

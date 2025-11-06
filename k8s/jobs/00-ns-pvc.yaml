@@ -9,7 +9,7 @@ metadata:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: podpower-data
+  name: energetiscope-data
   namespace: energy
 spec:
   storageClassName: local-path

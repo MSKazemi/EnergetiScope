@@ -14,7 +14,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: join
-          image: ghcr.io/mskazemi/k8spodpcp:latest
+          image: ghcr.io/mskazemi/energetiscope:latest
           imagePullPolicy: Always
           args:
             - python3
@@ -31,4 +31,4 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: podpower-data
+            claimName: energetiscope-data

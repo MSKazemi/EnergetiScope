@@ -5,13 +5,13 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: podpower-read
+  name: energetiscope-read
   namespace: energy
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: podpower-read
+  name: energetiscope-read
 rules:
 - apiGroups: ["", "apps", "batch"]
   resources: ["pods", "deployments", "jobs", "cronjobs"]
@@ -20,12 +20,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: podpower-read
+  name: energetiscope-read
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: podpower-read
+  name: energetiscope-read
 subjects:
 - kind: ServiceAccount
-  name: podpower-read
+  name: energetiscope-read
   namespace: energy

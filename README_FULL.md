@@ -1,6 +1,6 @@
-# k8sPodPCP — Kubernetes Pod Power and Energy Prediction
+# EnergetiScope — Kubernetes Workload Energy Prediction
 
-Predict energy/power for Kubernetes workloads from their specs. This repo collects workload templates, encodes them into features, trains a simple KNN regressor, and serves predictions via a FastAPI service. It integrates with Kepler and Prometheus to build ground-truth labels and can run end-to-end on Kubernetes.
+EnergetiScope predicts energy/power for Kubernetes workloads from their specs. This repo collects workload templates, encodes them into features, trains a simple KNN regressor, and serves predictions via a FastAPI service. It integrates with Kepler and Prometheus to build ground-truth labels and can run end-to-end on Kubernetes.
 
 ## ✨ Features
 
@@ -24,7 +24,7 @@ flowchart TD
     Kepler[(Kepler)] -->|metrics| Prometheus[(Prometheus)]
   end
   Jobs[Batch Jobs
-  collect→encode→label→join→train] -->|artifacts| PVC[(podpower-data PVC)]
+  collect→encode→label→join→train] -->|artifacts| PVC[(energetiscope-data PVC)]
   API --> PVC
   Collector --> PVC
 ```
@@ -118,14 +118,14 @@ python app/predict_k8s.py \
 ### Docker
 
 ```bash
-docker build -t k8spodpcp:latest .
+docker build -t energetiscope:latest .
 
 # Run API (override image CMD to start uvicorn)
 docker run --rm -p 8000:8000 \
   -e ENCODER_PATH=/app/artifacts/encoder.joblib \
   -e MODEL_PATH=/app/artifacts/knn_energy.joblib \
   -v "$(pwd)/app/artifacts:/app/artifacts:ro" \
-  k8spodpcp:latest \
+  energetiscope:latest \
   uvicorn app/predict_service:app --host 0.0.0.0 --port 8000
 ```
 
@@ -156,21 +156,21 @@ kubectl apply -f k8s/jobs/04-job3-dataset.yaml
 kubectl apply -f k8s/jobs/05-job4-train.yaml
 
 # Deploy predictor API (Service + optional Ingress)
-kubectl apply -f k8s/deploy-podpower-predict.yaml
+kubectl apply -f k8s/deploy-energetiscope-predict.yaml
 
 # Deploy collector (watches cluster and optionally POSTs to API)
-kubectl apply -f k8s/deploy-podpower-collector.yaml
+kubectl apply -f k8s/deploy-energetiscope-collector.yaml
 ```
 
 #### Example: CronJob that periodically pre-scores a Deployment
 
-Use a `CronJob` to predict energy for an existing Deployment on a schedule by piping the live manifest into the API. Ensure the Service name (`podpower-predict` below) matches your install, and the ServiceAccount has RBAC to read the target resource.
+Use a `CronJob` to predict energy for an existing Deployment on a schedule by piping the live manifest into the API. Ensure the Service name (`energetiscope-predict` below) matches your install, and the ServiceAccount has RBAC to read the target resource.
 
 ```yaml
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: podpower-prescore
+  name: energetiscope-prescore
   namespace: default
 spec:
   schedule: "*/10 * * * *"  # every 10 minutes
@@ -178,7 +178,7 @@ spec:
     spec:
       template:
         spec:
-          serviceAccountName: podpower-reader
+          serviceAccountName: energetiscope-reader
           restartPolicy: OnFailure
           containers:
           - name: prescore
@@ -189,14 +189,14 @@ spec:
               DEPLOY=nginx-deployment
               NS=default
               kubectl get deploy ${DEPLOY} -n ${NS} -o yaml | \
-              curl -sS -X POST http://podpower-predict.default.svc.cluster.local:8000/predict/from-yaml \
+              curl -sS -X POST http://energetiscope-predict.default.svc.cluster.local:8000/predict/from-yaml \
                 -H 'Content-Type: text/plain' --data-binary @- | jq .
 ```
 
 Notes:
 
-- Replace `podpower-predict.default.svc.cluster.local:8000` with your Service DNS/port.
-- Create a minimal RBAC allowing `get` on `deployments` in the target namespace for `podpower-reader`.
+- Replace `energetiscope-predict.default.svc.cluster.local:8000` with your Service DNS/port.
+- Create a minimal RBAC allowing `get` on `deployments` in the target namespace for `energetiscope-reader`.
 
 ## ⚙️ Configuration
 
@@ -298,8 +298,8 @@ python app/k8s_collect.py from-file ./example/example.yaml
 > **DOI:** `TODO`
 
 ```bibtex
-@misc{K8sPodPCP2025,
-  title = {k8sPodPCP: Kubernetes Pod Power and Energy Prediction},
+@misc{EnergetiScope2025,
+  title = {EnergetiScope: Machine Learning-Based Energy Prediction for Kubernetes Workloads},
   author = {TODO},
   year = {2025},
   doi = {TODO}

@@ -16,11 +16,11 @@ kubectl wait -n energy --for=condition=complete --timeout=30m job/join-train-row
 kubectl apply -f k8s/jobs/job4-train.yaml
 kubectl wait -n energy --for=condition=complete --timeout=60m job/train-power
 
-kubectl apply -f k8s/deploy-podpower-predict.yaml
-kubectl wait -n energy --for=condition=available --timeout=30m deployment/podpower-predict
+kubectl apply -f k8s/deploy-energetiscope-predict.yaml
+kubectl wait -n energy --for=condition=available --timeout=30m deployment/energetiscope-predict
 
-kubectl apply -f k8s/deploy-podpower-collector.yaml
-kubectl wait -n energy --for=condition=available --timeout=30m deployment/podpower-collector
+kubectl apply -f k8s/deploy-energetiscope-collector.yaml
+kubectl wait -n energy --for=condition=available --timeout=30m deployment/energetiscope-collector
 
 
 

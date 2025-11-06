@@ -1,8 +1,8 @@
-# k8sPodPCP: Technical and Scientific Documentation
+# EnergetiScope: Technical and Scientific Documentation
 
 ## System Overview
 
-k8sPodPCP (Kubernetes Pod Power and Energy Prediction) is a machine learning-based system for predicting energy consumption of Kubernetes workloads from their declarative specifications. The system employs a supervised learning approach, utilizing workload specifications as features and ground-truth energy measurements from Kepler as labels to train a k-nearest neighbors (KNN) regression model.
+EnergetiScope (Kubernetes Workload Energy Prediction) is a machine learning-based system for predicting energy consumption of Kubernetes workloads from their declarative specifications. The system employs a supervised learning approach, utilizing workload specifications as features and ground-truth energy measurements from Kepler as labels to train a k-nearest neighbors (KNN) regression model.
 
 ## Architecture and Workflow
 
