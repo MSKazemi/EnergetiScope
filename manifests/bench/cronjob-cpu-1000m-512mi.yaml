@@ -1,0 +1,38 @@
+# CronJob | CPU-bound | 1000m (1 core) | 512Mi memory
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: bench-cron-cpu-1000m
+  namespace: energetiscope-bench
+  labels:
+    app: energetiscope-bench
+    bench-profile: cpu
+    bench-cpu: "1000m"
+    bench-mem: "512Mi"
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 55
+      template:
+        metadata:
+          labels:
+            app: energetiscope-bench
+            bench-workload: bench-cron-cpu-1000m
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: stressor
+              image: alexeiled/stress-ng:latest
+              command: ["stress-ng", "--cpu", "2", "--timeout", "50s"]
+              resources:
+                requests:
+                  cpu: "1000m"
+                  memory: "512Mi"
+                limits:
+                  cpu: "1000m"
+                  memory: "512Mi"
+          terminationGracePeriodSeconds: 5

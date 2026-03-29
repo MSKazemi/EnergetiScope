@@ -1,0 +1,36 @@
+# Deployment | Memory-bound | 500m CPU | 1Gi memory
+# stress-ng --vm stresses memory bandwidth — different power profile from CPU-bound
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bench-mem-500m
+  namespace: energetiscope-bench
+  labels:
+    app: energetiscope-bench
+    bench-profile: memory
+    bench-cpu: "500m"
+    bench-mem: "1Gi"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: energetiscope-bench
+      bench-workload: bench-mem-500m
+  template:
+    metadata:
+      labels:
+        app: energetiscope-bench
+        bench-workload: bench-mem-500m
+    spec:
+      containers:
+        - name: stressor
+          image: alexeiled/stress-ng:latest
+          command: ["stress-ng", "--vm", "1", "--vm-bytes", "512M", "--timeout", "600s", "--metrics-brief"]
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+      terminationGracePeriodSeconds: 5

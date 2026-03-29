@@ -1,0 +1,36 @@
+# Deployment | CPU-bound | 250m CPU | 256Mi memory
+# stress-ng --cpu 1: saturates 1 virtual CPU
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bench-cpu-250m
+  namespace: energetiscope-bench
+  labels:
+    app: energetiscope-bench
+    bench-profile: cpu
+    bench-cpu: "250m"
+    bench-mem: "256Mi"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: energetiscope-bench
+      bench-workload: bench-cpu-250m
+  template:
+    metadata:
+      labels:
+        app: energetiscope-bench
+        bench-workload: bench-cpu-250m
+    spec:
+      containers:
+        - name: stressor
+          image: alexeiled/stress-ng:latest
+          command: ["stress-ng", "--cpu", "1", "--timeout", "600s", "--metrics-brief"]
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+      terminationGracePeriodSeconds: 5

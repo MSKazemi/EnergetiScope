@@ -1,0 +1,35 @@
+# Job | CPU-bound | 500m CPU | 256Mi memory
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: bench-job-cpu-500m
+  namespace: energetiscope-bench
+  labels:
+    app: energetiscope-bench
+    bench-profile: cpu
+    bench-cpu: "500m"
+    bench-mem: "256Mi"
+spec:
+  completions: 1
+  parallelism: 1
+  backoffLimit: 0
+  activeDeadlineSeconds: 660
+  template:
+    metadata:
+      labels:
+        app: energetiscope-bench
+        bench-workload: bench-job-cpu-500m
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: stressor
+          image: alexeiled/stress-ng:latest
+          command: ["stress-ng", "--cpu", "1", "--cpu-load", "50", "--timeout", "300s", "--metrics-brief"]
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+      terminationGracePeriodSeconds: 5

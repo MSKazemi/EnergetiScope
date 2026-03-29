@@ -1,0 +1,35 @@
+# Deployment | Idle baseline | 100m CPU | 128Mi memory
+# nginx serving no traffic — captures near-zero pod overhead
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bench-idle-100m
+  namespace: energetiscope-bench
+  labels:
+    app: energetiscope-bench
+    bench-profile: idle
+    bench-cpu: "100m"
+    bench-mem: "128Mi"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: energetiscope-bench
+      bench-workload: bench-idle-100m
+  template:
+    metadata:
+      labels:
+        app: energetiscope-bench
+        bench-workload: bench-idle-100m
+    spec:
+      containers:
+        - name: idle
+          image: nginx:alpine
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+      terminationGracePeriodSeconds: 5

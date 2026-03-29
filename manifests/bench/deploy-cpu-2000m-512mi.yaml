@@ -1,0 +1,35 @@
+# Deployment | CPU-bound | 2000m (2 cores) | 512Mi memory
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bench-cpu-2000m
+  namespace: energetiscope-bench
+  labels:
+    app: energetiscope-bench
+    bench-profile: cpu
+    bench-cpu: "2000m"
+    bench-mem: "512Mi"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: energetiscope-bench
+      bench-workload: bench-cpu-2000m
+  template:
+    metadata:
+      labels:
+        app: energetiscope-bench
+        bench-workload: bench-cpu-2000m
+    spec:
+      containers:
+        - name: stressor
+          image: alexeiled/stress-ng:latest
+          command: ["stress-ng", "--cpu", "4", "--timeout", "600s", "--metrics-brief"]
+          resources:
+            requests:
+              cpu: "2000m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "512Mi"
+      terminationGracePeriodSeconds: 5

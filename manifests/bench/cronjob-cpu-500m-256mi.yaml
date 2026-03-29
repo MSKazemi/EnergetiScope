@@ -1,0 +1,39 @@
+# CronJob | CPU-bound | 500m CPU | 256Mi memory
+# Runs every minute during collection window — captures periodic workload energy profile
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: bench-cron-cpu-500m
+  namespace: energetiscope-bench
+  labels:
+    app: energetiscope-bench
+    bench-profile: cpu
+    bench-cpu: "500m"
+    bench-mem: "256Mi"
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 55
+      template:
+        metadata:
+          labels:
+            app: energetiscope-bench
+            bench-workload: bench-cron-cpu-500m
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: stressor
+              image: alexeiled/stress-ng:latest
+              command: ["stress-ng", "--cpu", "1", "--cpu-load", "50", "--timeout", "50s"]
+              resources:
+                requests:
+                  cpu: "500m"
+                  memory: "256Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "256Mi"
+          terminationGracePeriodSeconds: 5
