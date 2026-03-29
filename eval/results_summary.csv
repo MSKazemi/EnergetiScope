@@ -1,0 +1,4 @@
+dataset,domain,n_samples,knn_k5_mae,knn_k5_rmse,knn_k5_r2,knn_k5_mape,lr_mae,lr_r2
+Zenodo:14332659 (BootstrapInitializer),K8s / stress-ng,4920,11.4641,23.9649,0.9215,2.95,35.3688,0.7576
+Zenodo:10127767 (PM100 HPC),HPC / IBM Power9,50000,697.5842,3546.8336,0.8723,27.89,904.1616,0.7882
+EnergetiScope (in-cluster Kepler),K8s / Kepler labels,277,3.0348,16.9179,0.656,16.93,3.0052,0.6618

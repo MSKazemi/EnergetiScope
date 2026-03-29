@@ -347,9 +347,35 @@ python app/k8s_collect.py from-file ./example/example.yaml
 
 ## 🗺️ Roadmap
 
-- Add validation datasets and benchmarks
-- Optional mutating webhook to annotate workloads with predicted power
-- Model registry and automated retraining
+### 🔬 System & Research
+
+| # | Action | Notes | Writing Aid |
+|---|--------|-------|-------------|
+| R1 | **Run experiments & record real MAE / R² numbers** | Execute `python app/train_power.py` on the live cluster dataset and replace the placeholder values in `paper/main.tex` §IV | [Scientific Validation Prompt](prompts/prompt.md) |
+| R2 | **Add validation datasets and benchmarks** | Establish a labelled holdout set from the cluster; define a standard split for reproducible comparison | [Scientific Validation Prompt](prompts/prompt.md) |
+| R3 | **Feature ablation study** | Systematically remove numeric / categorical / SBERT feature groups and report accuracy delta per group | [Scientific Validation Prompt](prompts/prompt.md) |
+| R4 | **Model registry and automated retraining** | Version `encoder.joblib` and `knn_energy.joblib`; schedule a periodic training CronJob | — |
+| R5 | **Runtime metrics integration** | Supplement static spec features with actual CPU% / memory% at steady state to improve accuracy | — |
+| R6 | **Ensemble / neural methods** | Evaluate gradient-boosted trees or a small MLP alongside KNN; compare cross-validated MAE | [Scientific Validation Prompt](prompts/prompt.md) |
+| R7 | **Cross-cluster transfer learning** | Train on cluster A, evaluate on cluster B; measure domain shift and explore fine-tuning strategies | [SoA Writing Prompt](prompts/prompot_sos.md) |
+| R8 | **Sidecar / service-mesh detection** | Implement `_count_sidecars()` in `k8s_collect.py` (currently returns 0) using Istio/Linkerd annotation heuristics | — |
+| R9 | **Optional mutating admission webhook** | Annotate admitted workloads with `energetiscope/pred-energy-step-j` at admission time | — |
+
+---
+
+### 📄 Conference Paper (`paper/`)
+
+| # | Action | Notes | Writing Aid |
+|---|--------|-------|-------------|
+| P1 | **Fill in real experimental results** | Replace placeholder comment in `paper/main.tex` §IV with actual `CV MAE ± std` and `R²` from `train_power.py` output | [Scientific Validation Prompt](prompts/prompt.md) |
+| P2 | **Create architecture figure** | Add `paper/figs/architecture.pdf` — a pipeline diagram (Stages 1–6); the paper references it at §III | [Writing Assistance Prompt](prompts/prompomt_writng%20_assistance.md) |
+| P3 | **Fill in author / affiliation block** | Replace placeholder in `\author{}` block in `paper/main.tex` | — |
+| P4 | **Choose and format for target venue** | Candidate venues: IEEE CLOUD, ICT4S, IPDPS, EuroSys, IEEE ICDCS — check page limit and style guide | — |
+| P5 | ~~**Verify and expand Related Work citations**~~ ✅ | All 19 PDFs downloaded to `paper/related_works/`. Each arXiv ID verified; DOIs and venue details updated in `energetiscope_ieee.tex` bibliography. | — |
+| P6 | **Add feature ablation results table** | Corresponds to R3 above; add a Table in §IV of the paper showing per-group MAE contribution | [Scientific Validation Prompt](prompts/prompt.md) |
+| P7 | **Reviewer-mode validation pass** | Run the full paper text through the validation checklist (claim-by-claim audit, contradiction check, gap realism) | [Scientific Validation Prompt](prompts/prompt.md) |
+| P8 | ~~**SoA section expansion**~~ ✅ | All 19 related-work PDFs read and verified. New grounded SoA written in `energetiscope_ieee.tex` §II with 5 themed subsections, comparison table (Table I), gap analysis, and 4-point contribution positioning. 17 new bibliography entries added. Extra standalone version in `paper/soa_section.tex`. | — |
+| P9 | **Build final PDF** | Run `make` in `paper/`; verify no `\undefined` refs, no overfull boxes, figure renders | [Writing Assistance Prompt](prompts/prompomt_writng%20_assistance.md) |
 
 ## 🤝 Contributing
 
