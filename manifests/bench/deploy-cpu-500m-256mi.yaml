@@ -23,8 +23,8 @@ spec:
     spec:
       containers:
         - name: stressor
-          image: alexeiled/stress-ng:latest
-          command: ["stress-ng", "--cpu", "1", "--cpu-load", "50", "--timeout", "600s", "--metrics-brief"]
+          image: polinux/stress-ng
+          command: ["stress-ng", "--cpu", "1", "--timeout", "600s"]
           resources:
             requests:
               cpu: "500m"

@@ -1,0 +1,26 @@
+[project]
+name = "energetiscope"
+version = "0.1.0"
+description = "Kubernetes container energy consumption prediction"
+requires-python = ">=3.11"
+dependencies = [
+    "kubernetes",
+    "pydantic",
+    "pyyaml",
+    "sentence-transformers",
+    "scikit-learn",
+    "joblib",
+    "pyarrow",
+    "pandas",
+    "fastapi",
+    "uvicorn",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[tool.ruff]
+line-length = 100

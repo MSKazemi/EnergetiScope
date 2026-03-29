@@ -155,7 +155,11 @@ def main():
     lab = power.merge(energy[["namespace","pod","ts","energy_step_j"]],
                       on=["namespace","pod","ts"], how="left")
 
-    if "ts" in owner.columns:
+    if owner.empty or "namespace" not in owner.columns:
+        # No owner mapping available — fill with defaults
+        lab["owner_kind"] = "Pod"
+        lab["owner_name"] = lab["pod"]
+    elif "ts" in owner.columns:
         lab = lab.merge(owner, on=["namespace","pod","ts"], how="left")
     else:
         lab = lab.merge(owner, on=["namespace","pod"], how="left")

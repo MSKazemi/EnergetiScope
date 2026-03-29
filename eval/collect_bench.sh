@@ -26,6 +26,7 @@
 #   ./eval/collect_bench.sh --prom http://prometheus.lpt.local --reps 3
 # =============================================================================
 set -euo pipefail
+export PYTHONPATH="${PYTHONPATH:-}:$(cd "$(dirname "$0")/../app" && pwd)"
 
 # ── defaults ──────────────────────────────────────────────────────────────────
 PROM_URL="http://localhost:9090"
@@ -204,7 +205,27 @@ for MANIFEST in "${MANIFESTS[@]}"; do
     # 5. Collect Kepler labels for the warmup window
     collect_labels "$START_TS" "$END_TS" "$LABEL_FILE"
 
-    # 6. Delete manifest + cooldown
+    # 6. Validate energy is non-zero
+    if [[ "$DRY_RUN" != "true" ]] && [[ -f "$LABEL_FILE" ]]; then
+      ENERGY_CHECK=$(python3 -c "
+import pandas as pd
+df = pd.read_parquet('$LABEL_FILE')
+bench = df[df['namespace'] == '$NS']
+if bench.empty:
+    print('WARN:no_bench_rows')
+else:
+    ecol = 'total_energy_j' if 'total_energy_j' in df.columns else 'energy_step_j'
+    total = bench[ecol].sum() if ecol in bench.columns else 0
+    nz = (bench[ecol] > 0).sum() if ecol in bench.columns else 0
+    print(f'energy_total={total:.2f}J non_zero_rows={nz}/{len(bench)}')
+" 2>&1)
+      log "ENERGY CHECK: $ENERGY_CHECK"
+      if echo "$ENERGY_CHECK" | grep -q "energy_total=0.00J"; then
+        log "[WARN] *** ZERO ENERGY DETECTED *** — Kepler may not be measuring this pod!"
+      fi
+    fi
+
+    # 7. Delete manifest + cooldown
     cleanup_manifest "$MANIFEST"
     log "Cooldown: ${COOLDOWN}s..."
     run sleep "$COOLDOWN"

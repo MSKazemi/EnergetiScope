@@ -1,22 +1,12 @@
-# k8s-collect — Turn K8s manifests & live workloads into **InferenceRequest** events
+# k8s-collect — Turn K8s manifests & live workloads into InferenceRequest events
 
-This tool watches your Kubernetes cluster (or parses YAML files) and emits a normalized **InferenceRequest** JSON for each relevant workload. It’s useful when you want a lightweight stream of pod/workload specs for downstream services (e.g., schedulers, model profilers, energy estimators).
-
----
-
-## ✨ What it does
-
-* **Watches** Deployments, Jobs, CronJobs (and optionally Pods) across namespaces.
-* **Normalizes** container specs into a Pydantic model: `InferenceRequest` with a list of `ContainerSpec`s.
-* **Streams** newline-delimited JSON (**NDJSON**) to stdout and/or a file.
-* **Optionally POSTs** every event to an HTTP endpoint you provide.
-* **Parses YAML** (“from-file” mode) to output the same JSON without hitting the cluster.
+This tool watches your Kubernetes cluster (or parses YAML files) and emits a normalized **InferenceRequest** JSON for each relevant workload. It's useful when you want a lightweight stream of pod/workload specs for downstream services (e.g., schedulers, model profilers, energy estimators).
 
 > The script expects `models.py` to define the Pydantic models `InferenceRequest` and `ContainerSpec`.
 
 ---
 
-## 📦 Requirements
+## Requirements
 
 * Python 3.9+
 * Packages: `kubernetes`, `pydantic`, `pyyaml` (for `from-file`), `requests` (only if using `--post`)
@@ -32,7 +22,7 @@ Optional env vars:
 
 ---
 
-## 🧰 CLI Usage
+## CLI Usage
 
 ```bash
 python k8s_collect.py <command> [options]
@@ -45,7 +35,7 @@ python k8s_collect.py <command> [options]
 
 ---
 
-## 🔭 `watch` command
+## `watch` command
 
 Watches for **ADDED**/**MODIFIED** events and emits normalized JSON for each object.
 
@@ -55,7 +45,7 @@ Watches for **ADDED**/**MODIFIED** events and emits normalized JSON for each obj
 python k8s_collect.py watch
 ```
 
-**Filter kinds & namespaces, dump to file, and POST to an API:**
+**With filters, file output, and HTTP forwarding:**
 
 ```bash
 python k8s_collect.py watch \
@@ -83,7 +73,7 @@ python k8s_collect.py watch \
 
 ### Output format (NDJSON)
 
-Each line is a serialized `InferenceRequest`. Example (fields may vary depending on your `models.py`):
+Each line is a serialized `InferenceRequest`. Example:
 
 ```json
 {
@@ -119,19 +109,17 @@ Each line is a serialized `InferenceRequest`. Example (fields may vary depending
 
 ---
 
-## 📄 `from-file` command
+## `from-file` command
 
-Parse one or more YAML docs (Deployment/Job/CronJob) and emit the corresponding `InferenceRequest` JSON to stdout.
+Parse one or more YAML docs (Deployment/Job/CronJob) and emit the corresponding `InferenceRequest` JSON to stdout. This does **not** contact the cluster — ideal for offline testing or CI.
 
 ```bash
 python k8s_collect.py from-file ./my-deploy.yaml
 ```
 
-This **does not** contact the cluster. It is ideal for offline testing or CI.
-
 ---
 
-## 🔐 Kube auth & config resolution
+## Kube auth & config resolution
 
 The client attempts the following, in order:
 
@@ -143,7 +131,7 @@ Use `--verify-ssl` and `--ca-file` to adjust TLS. Add `--suppress-tls-warnings` 
 
 ---
 
-## 🧱 Minimal RBAC (read-only)
+## Minimal RBAC (read-only)
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -166,7 +154,7 @@ Grant it with a `ClusterRoleBinding` to the ServiceAccount running this tool.
 
 ---
 
-## 🧩 Pydantic model expectations
+## Pydantic model expectations
 
 Your `models.py` should export:
 
@@ -177,9 +165,9 @@ Your `models.py` should export:
 
 ---
 
-## 🔌 Posting events to an HTTP endpoint
+## Posting events to an HTTP endpoint
 
-Add `--post http://your-service/endpoint` to `watch`. Each emitted `InferenceRequest` is sent as the request body (JSON). Non-2xx responses are logged as warnings; failures don’t stop the watcher.
+Add `--post http://your-service/endpoint` to `watch`. Each `InferenceRequest` is sent as the request body (JSON). Non-2xx responses are logged as warnings; failures don't stop the watcher.
 
 Example FastAPI receiver:
 
@@ -190,21 +178,12 @@ app = FastAPI()
 
 @app.post("/infer")
 async def receive_inference(ir: dict):
-    # validate & enqueue for downstream processing
     return {"ok": True}
-```
-
-Run the watcher:
-
-```bash
-python k8s_collect.py watch --post http://localhost:8000/infer
 ```
 
 ---
 
-## 🧪 Programmatic usage (as a library)
-
-You can import the generators and iterate them in your own code.
+## Programmatic usage (as a library)
 
 ```python
 from k8s_collect import stream_inference_requests, list_and_emit_initial, SeenCache
@@ -232,19 +211,19 @@ for ir in stream_inference_requests(
 
 ---
 
-## 🧠 Key implementation details
+## Key implementation details
 
-* **Resource kinds:** `Deployment`, `Job`, `CronJob` (plus `Pod` if you include it in `--kinds`).
+* **Resource kinds:** `Deployment`, `Job`, `CronJob` (plus `Pod` if included in `--kinds`).
 * **CronJob template:** extracted via `spec.jobTemplate.spec.template`.
-* **GPU detection:** sums any `resources.limits` keys that include the substring `gpu`.
-* **Resource parsing:** CPU to **mCPU** (e.g., `500m` → 500; `2` → 2000). Memory to **MiB** (supports Ki/Mi/Gi/Ti; raw bytes are converted to MiB).
-* **Sidecars:** `_count_sidecars` is currently a stub — extend it with mesh/logging heuristics if needed.
+* **GPU detection:** sums any `resources.limits` keys containing the substring `gpu`.
+* **Resource parsing:** CPU to mCPU (e.g., `500m` -> 500; `2` -> 2000). Memory to MiB (supports Ki/Mi/Gi/Ti; raw bytes are converted).
+* **Sidecars:** `_count_sidecars` is currently a stub — extend with mesh/logging heuristics if needed.
 
 ---
 
-## 🐳 Containerization (optional)
+## Containerization (optional)
 
-**Dockerfile (example):**
+**Dockerfile:**
 
 ```dockerfile
 FROM python:3.11-slim
@@ -254,7 +233,7 @@ RUN pip install kubernetes pydantic pyyaml requests
 CMD ["python", "k8s_collect.py", "watch", "--emit-initial"]
 ```
 
-**Run in-cluster (Deployment snippet):**
+**In-cluster Deployment:**
 
 ```yaml
 apiVersion: apps/v1
@@ -278,10 +257,4 @@ spec:
         env:
         - name: K8S_CA_FILE
           value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        # Add --post URL if needed
 ```
-
----
-
-
-

@@ -135,26 +135,147 @@ Total dimensionality typically ranges from 20-50 dimensions without SBERT, and 4
 ### Data Flow
 
 ```
-Kubernetes API → k8s_collect.py → InferenceRequest (NDJSON)
-                                           ↓
-                                    k8s_encode.py
-                                           ↓
-                                    Feature Vectors (Parquet)
-                                           ↓
-Prometheus/Kepler → kepler_labels.py → Energy Labels (Parquet)
-                                           ↓
-                                    join_features_labels.py
-                                           ↓
-                                    Training Dataset (Parquet)
-                                           ↓
-                                    train_power.py
-                                           ↓
-                                    Trained Model (joblib)
-                                           ↓
-                                    predict_service.py (FastAPI)
-                                           ↓
-                                    Energy Predictions (JSON)
+K8s Cluster                              Prometheus / Kepler
+    │                                            │
+    ▼                                            ▼
+┌───────────────────┐                   ┌──────────────────────┐
+│   k8s_collect.py  │                   │   kepler_labels.py   │
+│   (watches K8s    │                   │   (queries Prometheus │
+│    API for pods)  │                   │    for energy data)   │
+└────────┬──────────┘                   └───────────┬──────────┘
+         │                                          │
+    NDJSON files                              Parquet files
+    (one JSON object                       (energy per pod
+     per workload)                          per time step)
+         │                                          │
+         ▼                                          │
+┌───────────────────┐                               │
+│   k8s_encode.py   │                               │
+│   (fit encoder +  │                               │
+│    transform to   │                               │
+│    numeric vector)│                               │
+└────────┬──────────┘                               │
+         │                                          │
+    features.parquet                      kepler_labels.parquet
+    (9-dim feature                        (energy_step_j,
+     vector per workload)                  avg_power_w)
+         │                                          │
+         └─────────────────┬────────────────────────┘
+                           ▼
+                 ┌───────────────────┐
+                 │ join_features_    │
+                 │   labels.py       │
+                 │ (inner join on    │
+                 │  namespace +      │
+                 │  workload_kind +  │
+                 │  workload_name)   │
+                 └────────┬──────────┘
+                          │
+                   train_rows.parquet
+                  (features + energy
+                   labels per workload)
+                          │
+                          ▼
+                 ┌───────────────────┐
+                 │  train_power.py   │
+                 │  (KNN k=5,        │
+                 │   cosine distance) │
+                 └────────┬──────────┘
+                          │
+                    model.joblib
+                          │
+                          ▼
+                 ┌───────────────────┐
+                 │ predict_service.py│
+                 │  (FastAPI REST)   │
+                 └────────┬──────────┘
+                          │
+                          ▼
+                  Energy Predictions
+                      (JSON)
 ```
+
+### Data File Formats
+
+The system uses two primary file formats: NDJSON for raw collection output and Parquet for processed ML data.
+
+#### NDJSON Files (Raw Collection Output)
+
+Produced by `k8s_collect.py`. Each line is one JSON object describing a workload's K8s manifest spec:
+
+```json
+{
+    "namespace": "kubeintellect",
+    "workload_kind": "Deployment",
+    "workload_name": "myapp",
+    "labels": {},
+    "annotations": {},
+    "containers": [
+      {
+        "name": "c",
+        "image": "nginx",
+        "req_cpu_mcpu": 100,
+        "req_mem_mib": 128
+      }
+    ],
+    "init_container_count": 0,
+    "sidecar_count": 0,
+    "volume_types": [],
+    "gpu_count": 0
+}
+```
+
+#### Parquet Files (Processed ML Data)
+
+**Features Parquet** (`data/features.parquet`) — one row per workload:
+
+| Column | Type | Example | Description |
+|--------|------|---------|-------------|
+| `namespace` | string | `ingress-nginx` | K8s namespace |
+| `workload_kind` | string | `Deployment` | Workload type (Deployment, Job, CronJob) |
+| `workload_name` | string | `ingress-nginx-controller` | Name of the owner workload |
+| `_spec_hash` | string | `8a2708e13190b90c` | SHA-256 hash of the spec (for deduplication) |
+| `vec_len` | int | `9` | Length of the feature vector |
+| `features` | float array | `[0.0, 0.0, 0.0, 0.43, 1.61, ...]` | Encoded 9-dim numeric vector |
+
+The `features` vector dimensions:
+
+| Dimensions | Source Fields | Encoding |
+|------------|--------------|----------|
+| 0–2 | `gpu_count`, `init_container_count`, `sidecar_count` | StandardScaler |
+| 3–4 | `req_cpu_mcpu`, `req_mem_mib` (summed across containers) | StandardScaler |
+| 5–6 | `runtime_class`, `node_type` | OneHotEncoder |
+| 7–8 | `lim_cpu_mcpu`, `lim_mem_mib` (summed across containers) | StandardScaler |
+
+**Labels Parquet** (`data/kepler_labels.parquet`) — one row per pod per time step:
+
+| Column | Type | Example | Description |
+|--------|------|---------|-------------|
+| `ts` | float | `1761841000.0` | Unix timestamp of the measurement |
+| `namespace` | string | `ingress-nginx` | K8s namespace |
+| `workload_kind` | string | `Deployment` | Owner workload type |
+| `workload_name` | string | `ingress-nginx-controller` | Owner workload name |
+| `pod` | string | `ingress-nginx-...-g862j` | Actual pod name |
+| `avg_power_w` | float | `NaN` | Average power in watts (when available) |
+| `energy_step_j` | float | `3.84` | Energy consumed in this time step (joules) — **primary prediction target** |
+
+**Training Parquet** (`data/train_rows.parquet`) — inner join of features and labels:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `namespace` | string | K8s namespace (join key) |
+| `workload_kind` | string | Workload type (join key) |
+| `workload_name` | string | Workload name (join key) |
+| `features` | float array | 9-dim encoded feature vector (from features parquet) |
+| `energy_step_j` | float | Energy per time step in joules (from labels parquet) |
+| `avg_power_w` | float | Average power in watts (from labels parquet) |
+
+#### Why Parquet Instead of CSV or JSON
+
+- **Columnar format**: Efficient for reading specific columns without loading the entire file
+- **Native array support**: Stores numpy arrays (the 9-dim feature vector) directly, unlike CSV which would flatten them
+- **Type preservation**: Maintains exact numeric types (float64, int64) without parsing ambiguity
+- **Compact**: Significantly smaller on disk than equivalent JSON for numeric data
 
 ## Integration with Kubernetes Ecosystem
 
@@ -177,20 +298,9 @@ The system integrates with several Kubernetes ecosystem components:
 
 5. **Feature Completeness**: Predictions are based solely on declarative specifications. Runtime behavior, actual resource utilization, and external factors (network I/O, storage I/O) are not directly captured in the feature set.
 
-## Use Cases
+## See Also
 
-The system is designed for:
-- **Scheduler Integration**: Pre-scheduling energy estimation for workload placement decisions
-- **Cost Optimization**: Predicting energy costs before workload deployment
-- **Capacity Planning**: Estimating cluster energy requirements for workload sets
-- **Research**: Studying relationships between workload specifications and energy consumption
-
-## Future Enhancements
-
-Potential improvements include:
-- Integration of runtime metrics (actual CPU/memory utilization) as features
-- Model registry and automated retraining pipelines
-- Support for additional prediction targets (peak power, energy efficiency metrics)
-- Ensemble methods combining multiple model types
-- Transfer learning approaches for cross-cluster generalization
+- `README.md` — Quickstart, API reference, and deployment instructions
+- `ROADMAP.md` — Project progress and planned improvements
+- `DISCUSSION_LOG.md` — Key decisions and experimental findings
 

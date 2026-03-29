@@ -27,8 +27,8 @@ spec:
           restartPolicy: Never
           containers:
             - name: stressor
-              image: alexeiled/stress-ng:latest
-              command: ["stress-ng", "--cpu", "1", "--cpu-load", "50", "--timeout", "50s"]
+              image: polinux/stress-ng
+              command: ["stress-ng", "--cpu", "1", "--timeout", "50s"]
               resources:
                 requests:
                   cpu: "500m"

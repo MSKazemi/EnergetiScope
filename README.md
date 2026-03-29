@@ -33,7 +33,7 @@ Batch Jobs: collect → encode → label → join → train
 
 - Python ≥ 3.11
 - Kubernetes cluster access (optional for local dev)
-- Prometheus + Kepler for label generation (see `kepler-setup.md` and `prometheus-setup.md`)
+- Prometheus + Kepler for label generation (see `cluster-setup.md`)
 - Docker and `kubectl`/`helm` for cluster deployment
 
 ### Local install
@@ -184,7 +184,7 @@ docker run --rm -p 8000:8000 \
 
 ## Kubernetes Deployment
 
-Install Prometheus and Kepler first (see `prometheus-setup.md` and `kepler-setup.md`), then apply the manifests in order:
+Install Prometheus and Kepler first (see `cluster-setup.md`), then apply the manifests in order:
 
 ```bash
 # Namespace and PVC
@@ -258,53 +258,15 @@ The `energetiscope-reader` ServiceAccount needs `get` on `deployments` in the ta
 
 In Kubernetes, manifests mount a PVC at `/app/artifacts` and set the above env vars automatically.
 
-## Prometheus / Kepler Sanity Check
-
-Ensure Prometheus has data for these metrics before running label export:
-
-- `kube_pod_owner`
-- `kepler_container_power_watt`
-- `kepler_container_joules_total`
-
-## Roadmap
-
-### Research
-
-| # | Task | Status |
-|---|------|--------|
-| R1 | Run experiments and record real MAE / R² values | pending |
-| R2 | Add validation datasets and holdout benchmarks | pending |
-| R3 | Feature ablation study (numeric / categorical / SBERT) | pending |
-| R4 | Model registry and automated retraining CronJob | pending |
-| R5 | Runtime metrics integration (CPU%, memory% at steady state) | pending |
-| R6 | Evaluate gradient-boosted trees or MLP alongside KNN | pending |
-| R7 | Cross-cluster transfer learning evaluation | pending |
-| R8 | Sidecar/service-mesh detection (`_count_sidecars()`) | pending |
-| R9 | Optional mutating admission webhook | pending |
-
-### Paper (`paper/`)
-
-| # | Task | Status |
-|---|------|--------|
-| P1 | Fill in real CV MAE ± std and R² in §IV | pending |
-| P2 | Create architecture figure (`paper/figs/architecture.pdf`) | pending |
-| P3 | Fill in author / affiliation block | pending |
-| P4 | Choose and format for target venue (IEEE CLOUD, ICT4S, IPDPS, EuroSys) | pending |
-| P5 | Verify and expand related work citations | done |
-| P6 | Add feature ablation results table in §IV | pending |
-| P7 | Reviewer-mode validation pass | pending |
-| P8 | SoA section expansion | done |
-| P9 | Build final PDF (`cd paper && make`) | pending |
-
-## Additional Files
+## Additional Documentation
 
 | File | Description |
 |---|---|
-| `kepler-setup.md` | Helm install commands for Kepler |
-| `prometheus-setup.md` | Helm install commands for kube-prometheus-stack |
-| `example/example.yaml` | Sample Kubernetes manifest for local testing |
-| `TECHNICAL_DOCUMENTATION.md` | In-depth technical reference |
-| `ROADMAP.md` | Detailed project progress tracking |
+| `ROADMAP.md` | Detailed project progress tracking and next steps |
+| `TECHNICAL_DOCUMENTATION.md` | In-depth technical reference (pipeline, data formats, model) |
+| `DISCUSSION_LOG.md` | Key decisions and findings from working sessions |
+| `cluster-setup.md` | Helm install commands for Prometheus + Kepler |
+| `k8s-collect-guide.md` | Detailed guide for the k8s_collect.py tool |
 
 ## License
 
