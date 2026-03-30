@@ -31,6 +31,11 @@ def main():
 
     combined = pd.concat(frames, ignore_index=True)
 
+    # Normalize energy column: bench collection uses "total_energy_j" (job mode),
+    # while window mode uses "energy_step_j". Support both.
+    if "total_energy_j" in combined.columns and "energy_step_j" not in combined.columns:
+        combined["energy_step_j"] = combined["total_energy_j"]
+
     # Keep only rows with valid energy
     valid = combined[combined["energy_step_j"].notna() & (combined["energy_step_j"] > 0)]
     print(f"[OK] Combined {len(files)} files → {len(combined)} rows ({len(valid)} with valid energy_step_j)")
