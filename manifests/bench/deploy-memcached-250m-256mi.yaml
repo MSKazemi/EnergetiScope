@@ -1,0 +1,35 @@
+# Deployment | Memcached | 250m CPU | 256Mi memory
+# Memory-bound in-memory cache — different energy profile from stress-ng
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bench-memcached-250m
+  namespace: energetiscope-bench
+  labels:
+    app: energetiscope-bench
+    bench-profile: memcached
+    bench-cpu: "250m"
+    bench-mem: "256Mi"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: energetiscope-bench
+      bench-workload: bench-memcached-250m
+  template:
+    metadata:
+      labels:
+        app: energetiscope-bench
+        bench-workload: bench-memcached-250m
+    spec:
+      containers:
+        - name: memcached
+          image: memcached:alpine
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+      terminationGracePeriodSeconds: 5

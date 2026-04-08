@@ -147,6 +147,12 @@ MANIFESTS=(
   "$MANIFEST_DIR/job-cpu-2000m-1gi.yaml"
   "$MANIFEST_DIR/cronjob-cpu-500m-256mi.yaml"
   "$MANIFEST_DIR/cronjob-cpu-1000m-512mi.yaml"
+  # Diverse real-world workloads (SBERT ablation)
+  "$MANIFEST_DIR/deploy-nginx-250m-128mi.yaml"
+  "$MANIFEST_DIR/deploy-memcached-250m-256mi.yaml"
+  "$MANIFEST_DIR/deploy-redis-500m-256mi.yaml"
+  "$MANIFEST_DIR/deploy-postgres-500m-512mi.yaml"
+  "$MANIFEST_DIR/job-python-cpu-500m-256mi.yaml"
 )
 
 # ── setup ─────────────────────────────────────────────────────────────────────

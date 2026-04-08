@@ -1,0 +1,35 @@
+# Deployment | Nginx web server | 250m CPU | 128Mi memory
+# Idle web server baseline — different resource profile from bench-idle-100m
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bench-nginx-250m
+  namespace: energetiscope-bench
+  labels:
+    app: energetiscope-bench
+    bench-profile: nginx
+    bench-cpu: "250m"
+    bench-mem: "128Mi"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: energetiscope-bench
+      bench-workload: bench-nginx-250m
+  template:
+    metadata:
+      labels:
+        app: energetiscope-bench
+        bench-workload: bench-nginx-250m
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+      terminationGracePeriodSeconds: 5

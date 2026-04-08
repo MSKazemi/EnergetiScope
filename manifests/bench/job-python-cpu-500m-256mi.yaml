@@ -1,0 +1,36 @@
+# Job | Python CPU compute | 500m CPU | 256Mi memory
+# CPU-dominant workload with a different image family from stress-ng
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: bench-job-python-cpu-500m
+  namespace: energetiscope-bench
+  labels:
+    app: energetiscope-bench
+    bench-profile: python-cpu
+    bench-cpu: "500m"
+    bench-mem: "256Mi"
+spec:
+  completions: 1
+  parallelism: 1
+  backoffLimit: 0
+  activeDeadlineSeconds: 660
+  template:
+    metadata:
+      labels:
+        app: energetiscope-bench
+        bench-workload: bench-job-python-cpu-500m
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: compute
+          image: python:3.11-slim
+          command: ["python", "-c", "import math; [math.factorial(10000) for _ in range(50000)]"]
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+      terminationGracePeriodSeconds: 5

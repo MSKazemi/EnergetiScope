@@ -1,0 +1,5 @@
+condition,dataset,n_rows,n_groups,cv_method,knn_mae,knn_r2,knn_mape,lr_mae,lr_r2
+Numeric only,Expanded (18 configs),6138,13,KFold,1004.9,0.8993,292.2,1821.3,0.8202
+Numeric + SBERT,Expanded (18 configs),6138,13,KFold,488.7,0.9813,12.1,442.8,0.9828
+Numeric only,Expanded (18 configs),6138,13,GroupKFold,2813.0,-1.6826,4710.2,,
+Numeric + SBERT,Expanded (18 configs),6138,13,GroupKFold,1955.7,-0.0262,625.1,,

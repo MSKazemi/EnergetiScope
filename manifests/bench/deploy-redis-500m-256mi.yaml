@@ -1,0 +1,35 @@
+# Deployment | Redis server | 500m CPU | 256Mi memory
+# I/O + memory-bound workload — structurally different image from stress-ng
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bench-redis-500m
+  namespace: energetiscope-bench
+  labels:
+    app: energetiscope-bench
+    bench-profile: redis
+    bench-cpu: "500m"
+    bench-mem: "256Mi"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: energetiscope-bench
+      bench-workload: bench-redis-500m
+  template:
+    metadata:
+      labels:
+        app: energetiscope-bench
+        bench-workload: bench-redis-500m
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+      terminationGracePeriodSeconds: 5

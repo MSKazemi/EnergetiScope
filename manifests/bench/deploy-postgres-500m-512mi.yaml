@@ -1,0 +1,38 @@
+# Deployment | PostgreSQL database | 500m CPU | 512Mi memory
+# Mixed I/O + CPU workload — structurally different image from stress-ng
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bench-postgres-500m
+  namespace: energetiscope-bench
+  labels:
+    app: energetiscope-bench
+    bench-profile: postgres
+    bench-cpu: "500m"
+    bench-mem: "512Mi"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: energetiscope-bench
+      bench-workload: bench-postgres-500m
+  template:
+    metadata:
+      labels:
+        app: energetiscope-bench
+        bench-workload: bench-postgres-500m
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          env:
+            - name: POSTGRES_PASSWORD
+              value: "bench"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+      terminationGracePeriodSeconds: 5
