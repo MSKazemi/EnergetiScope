@@ -133,7 +133,7 @@ def experiment_bootstrap(data_dir):
 
     # Mean baseline
     mean_mae = np.mean([mean_absolute_error([np.mean(y)] * len(y), y)])
-    print(f"\n  [Mean Baseline]")
+    print("\n  [Mean Baseline]")
     print(f"    MAE   : {mean_mae:8.3f} (predict mean for all)")
 
     # Extended feature set: cpuSeconds + cpuSeconds^2 (nonlinearity)
@@ -257,7 +257,7 @@ def main():
     print("="*65)
     if r1:
         knn5 = r1["KNN_k5"]
-        print(f"  BootstrapInitializer KNN k=5:")
+        print("  BootstrapInitializer KNN k=5:")
         print(f"    MAE  = {knn5['MAE'][0]:.2f} W   RMSE = {knn5['RMSE'][0]:.2f} W")
         print(f"    R²   = {knn5['R2'][0]:.4f}      MAPE = {knn5['MAPE'][0]:.1f}%")
     if r2:

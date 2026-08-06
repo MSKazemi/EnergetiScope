@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-import argparse, joblib, json, numpy as np, pandas as pd
+import argparse
+import joblib
+import json
+import numpy as np
+import pandas as pd
 
 def main():
     p = argparse.ArgumentParser()
@@ -9,7 +13,8 @@ def main():
     args = p.parse_args()
 
     # reuse the encoder CLI to transform
-    import subprocess, tempfile, os
+    import subprocess
+    import tempfile
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".parquet")
     tmp.close()
     cmd = ["python", "k8s_encode.py", "transform",
@@ -31,7 +36,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-=? numpy array 393 features

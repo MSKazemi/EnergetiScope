@@ -1,293 +1,188 @@
-# EnergetiScope — Kubernetes Workload Energy Prediction
+# EnergetiScope
 
-EnergetiScope predicts energy consumption for Kubernetes workloads from their specs before they run. It collects workload templates, encodes them into features, trains a KNN regressor, and serves predictions via a FastAPI service. Ground-truth labels come from Kepler and Prometheus.
+**Predict how much energy a Kubernetes workload will use — from its YAML, before you deploy it.**
 
-## Features
+EnergetiScope learns the relationship between a workload's *specification* (image, resource
+requests, kind, labels) and its *measured* energy draw, using [Kepler](https://github.com/sustainable-computing-io/kepler)'s
+eBPF power metrics as ground truth. Give it a manifest, get joules back — without running the
+workload first.
 
-- **Kubernetes watcher** — streams `Deployment`/`Job`/`CronJob`/`Pod` specs to structured `InferenceRequest` JSON
-- **Feature encoder** — SBERT-optional text embeddings + numeric/categorical features → Parquet
-- **Label builder** — exports `avg_power_w` and `energy_step_j`/`total_energy_j` from Kepler/Prometheus
-- **Training** — KNN baseline with group-aware cross-validation; artifact saved as `.joblib`
-- **Serving** — FastAPI service with `/predict`, `/predict/from-yaml`, and `/infer/from-yaml` endpoints
-- **Kubernetes manifests** — batch Jobs for the full pipeline and Deployments for API + collector
+It is for platform and SRE teams doing energy-aware scheduling, capacity planning, or carbon
+reporting, who already have Kepler and want a *predictive* signal rather than only a
+retrospective one.
 
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────┐
-│                    Kubernetes Cluster                 │
-│                                                       │
-│  Collector ──POST InferenceRequest──► FastAPI /predict│
-│  (k8s_collect.py)                    uses encoder.joblib
-│                                      uses knn_energy.joblib
-│  Kepler ──metrics──► Prometheus                       │
-└─────────────────────────────────────────────────────┘
-         ▲ artifacts
-Batch Jobs: collect → encode → label → join → train
-         └──────────────────────────────► PVC (energetiscope-data)
+```console
+$ curl -sS -X POST localhost:8000/predict/from-yaml \
+    -H 'Content-Type: text/plain' --data-binary @deployment.yaml
+{"pred_energy_step_j":3423.8538,"workload_kind":"Deployment","workload_name":"nginx",
+ "namespace":"default","spec_hash":"5f834bc13195e9ed"}
 ```
 
-## Quickstart
+On our benchmark, gradient-boosted trees reach **R² = 0.917, MAPE 11.5%** under
+workload-grouped cross-validation (n = 1,422 measurements over 10 workload groups).
+Reproduce that number yourself in one command — it is the quickstart below.
 
-### Prerequisites
+---
 
-- Python ≥ 3.11
-- Kubernetes cluster access (optional for local dev)
-- Prometheus + Kepler for label generation (see `cluster-setup.md`)
-- Docker and `kubectl`/`helm` for cluster deployment
-
-### Local install
+## Install
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+git clone https://github.com/MSKazemi/EnergetiScope.git
+cd EnergetiScope
+pip install -r requirements.txt      # or: make install  (uses uv)
 ```
 
-### Run the API locally
+Requires **Python ≥ 3.11**. No cluster needed to try it — the benchmark dataset ships with
+the repo.
+
+## Quickstart — reproduce the benchmark (about a minute)
 
 ```bash
-uvicorn app/predict_service:app --host 0.0.0.0 --port 8000
-# Swagger UI: http://localhost:8000/docs
+python eval/eval_bench_grouped.py
 ```
 
-## API Reference
+```
+rows=1422  workload groups=10  target=energy_step_j  mean=10624.0 J  sd=4321.3 J
+feature dim=9  non-constant columns=4
 
-All endpoints are on the FastAPI service (`app/predict_service.py`). Artifacts are loaded at startup from env vars.
+model                             MAE (J)     RMSE      R2    MAPE |   wl-MAE   wl-R2  wl-MAPE
+----------------------------------------------------------------------------------------------
+KNN (k=5, cosine)            2027 +/- 1285     2648   0.625   23.3% |     1612   0.773    20.9%
+Linear Regression            1449 +/- 633      1704   0.844   15.1% |      911   0.933    14.9%
+Gradient Boosted Trees        982 +/- 347      1242   0.917   11.5% |      767   0.956     9.9%
+Random Forest                1092 +/- 428      1377   0.898   13.1% |      889   0.938    11.7%
+
+mean-predictor MAE = 3523 J (R2 = 0 by definition)
+```
+
+Folds are split by workload (`GroupKFold`) and metrics are computed on pooled out-of-fold
+predictions, so repeated measurements of one workload never straddle a fold. The
+mean-predictor row is printed as the honest floor to compare against.
+
+## Serve predictions
+
+```bash
+PYTHONPATH=app \
+ENCODER_PATH=data/bench/encoder.joblib \
+MODEL_PATH=data/artifacts/knn_bench.joblib \
+  uvicorn predict_service:app --port 8000
+```
+
+> `PYTHONPATH=app` is required — the service imports its encoder as a top-level module.
+
+```bash
+curl -sS -X POST localhost:8000/predict -H 'Content-Type: application/json' -d '{
+  "namespace": "default",
+  "workload_kind": "Deployment",
+  "workload_name": "nginx",
+  "containers": [
+    {"name": "nginx", "image": "nginx:1.25", "req_cpu_mcpu": 250, "req_mem_mib": 256}
+  ]
+}'
+```
+
+```json
+{"pred_energy_step_j":3423.8538,"workload_kind":"Deployment","workload_name":"nginx",
+ "namespace":"default","spec_hash":"5f834bc13195e9ed"}
+```
+
+Interactive docs at <http://localhost:8000/docs>.
+
+## How it works
+
+```
+k8s_collect.py            watch the cluster   → InferenceRequest NDJSON
+k8s_encode.py             fit / transform     → feature vectors + encoder.joblib
+kepler_labels.py          query Prometheus    → measured energy per workload
+join_features_labels.py   merge               → train_rows.parquet
+train_power.py            GroupKFold CV       → model.joblib
+predict_service.py        FastAPI             → joules from a manifest
+```
+
+Each workload becomes one vector combining optional **SBERT** embeddings of image names and
+labels, **numeric** resource requests/limits, and **one-hot categorical** runtime/node class.
+Regressors available via `--model {gbt,rf,linear,knn}`; `gbt` is the default and the most
+accurate on our benchmark.
+
+## API
 
 | Endpoint | Method | Input | Output |
 |---|---|---|---|
-| `/predict` | POST | `InferenceRequest` JSON | `PredictOut` JSON |
-| `/infer/from-yaml` | POST | Kubernetes YAML (`text/plain`) | Array of `InferenceRequest` JSON |
-| `/predict/from-yaml` | POST | Kubernetes YAML (`text/plain`) | `PredictOut` JSON |
+| `/predict` | POST | `InferenceRequest` JSON | prediction JSON |
+| `/infer/from-yaml` | POST | Kubernetes YAML (`text/plain`) | `InferenceRequest[]` |
+| `/predict/from-yaml` | POST | Kubernetes YAML (`text/plain`) | prediction JSON |
 
-**Environment variables:**
-
-| Variable | Default | Description |
-|---|---|---|
-| `ENCODER_PATH` | `/artifacts/encoder.joblib` | Encoder artifact path |
-| `MODEL_PATH` | `/artifacts/knn_energy.joblib` | Trained model path |
-
-**Response shape:**
-
-```json
-{
-  "pred_energy_step_j": 123.4,
-  "workload_kind": "Deployment",
-  "workload_name": "nginx",
-  "namespace": "default",
-  "spec_hash": "6c7c..."
-}
-```
-
-### Examples
-
-**From a live Deployment (inside cluster):**
-
-```bash
-kubectl get deploy nginx -n default -o yaml | \
-  curl -sS -X POST \
-    http://energetiscope-predict.default.svc.cluster.local:8000/predict/from-yaml \
-    -H 'Content-Type: text/plain' --data-binary @- | jq .
-```
-
-**From an `InferenceRequest` JSON:**
-
-```bash
-curl -sS -X POST http://localhost:8000/predict \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "workload_kind": "Deployment",
-    "workload_name": "nginx",
-    "namespace": "default",
-    "pod_spec": {"containers": [{"name": "nginx", "image": "nginx:1.25"}]}
-  }' | jq .
-```
-
-**From Python:**
-
-```python
-import requests
-
-yaml_text = open("example/example.yaml").read()
-r = requests.post(
-    "http://localhost:8000/predict/from-yaml",
-    data=yaml_text,
-    headers={"Content-Type": "text/plain"},
-    timeout=30,
-)
-print(r.json())  # {'pred_energy_step_j': ..., 'workload_kind': 'Deployment', ...}
-```
-
-## Pipeline: collect → encode → label → join → train → predict
-
-Run the full pipeline locally with the following steps:
-
-```bash
-# 1. Collect workload specs from your cluster
-python app/k8s_collect.py watch \
-  --kinds Deployment Job CronJob Pod \
-  --emit-initial \
-  --suppress-tls-warnings \
-  --output data/in.ndjson
-
-# 2. Fit encoder (--no-sbert speeds up initial runs)
-python app/k8s_encode.py fit \
-  --input data/in.ndjson \
-  --out artifacts/encoder.joblib \
-  --no-sbert
-
-# 3. Transform features
-python app/k8s_encode.py transform \
-  --input data/in.ndjson \
-  --encoder artifacts/encoder.joblib \
-  --out data/features.parquet
-
-# 4. Export labels from Kepler/Prometheus
-python app/kepler_labels.py \
-  --prom http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090 \
-  --mode job \
-  --start $(date -u -d '6 hours ago' +%s) \
-  --end   $(date -u +%s) \
-  --out data/labels.parquet
-
-# 5. Join features and labels
-python app/join_features_labels.py \
-  --features data/features.parquet \
-  --labels   data/labels.parquet \
-  --out      data/train_rows.parquet
-
-# 6. Train KNN model
-python app/train_power.py \
-  --train data/train_rows.parquet \
-  --target total_energy_j \
-  --out artifacts/knn_energy.joblib
-
-# 7. Predict for current workloads
-python app/predict_k8s.py \
-  --encoder artifacts/encoder.joblib \
-  --model   artifacts/knn_energy.joblib \
-  --input   data/in.ndjson
-```
-
-## Docker
-
-```bash
-docker build -t energetiscope:latest .
-
-docker run --rm -p 8000:8000 \
-  -e ENCODER_PATH=/app/artifacts/encoder.joblib \
-  -e MODEL_PATH=/app/artifacts/knn_energy.joblib \
-  -v "$(pwd)/app/artifacts:/app/artifacts:ro" \
-  energetiscope:latest \
-  uvicorn app/predict_service:app --host 0.0.0.0 --port 8000
-```
-
-## Kubernetes Deployment
-
-Install Prometheus and Kepler first (see `cluster-setup.md`), then apply the manifests in order:
-
-```bash
-# Namespace and PVC
-kubectl apply -f k8s/jobs/00-ns-pvc.yaml
-
-# RBAC for reading cluster objects
-kubectl apply -f k8s/jobs/01-rbac.yaml
-
-# Job 1: collect + encode
-kubectl apply -f k8s/jobs/02-job1-collect.yaml
-
-# Job 2: build labels from Kepler
-kubectl apply -f k8s/jobs/03-job2-label.yaml
-
-# Job 3: join features and labels
-kubectl apply -f k8s/jobs/04-job3-dataset.yaml
-
-# Job 4: train model
-kubectl apply -f k8s/jobs/05-job4-train.yaml
-
-# Deploy the predictor API
-kubectl apply -f k8s/deploy-energetiscope-predict.yaml
-
-# Deploy the collector
-kubectl apply -f k8s/deploy-energetiscope-collector.yaml
-```
-
-> **Note:** Update the Prometheus endpoint in `03-job2-label.yaml` and the storage class in `00-ns-pvc.yaml` to match your cluster setup.
-
-**In-cluster service DNS:** `http://energetiscope-predict.<namespace>.svc.cluster.local:8000`
-
-### Example: CronJob to periodically pre-score a Deployment
-
-```yaml
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: energetiscope-prescore
-  namespace: default
-spec:
-  schedule: "*/10 * * * *"
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          serviceAccountName: energetiscope-reader
-          restartPolicy: OnFailure
-          containers:
-          - name: prescore
-            image: bitnami/kubectl:1.29
-            command: ["/bin/sh", "-c"]
-            args:
-            - |
-              kubectl get deploy nginx-deployment -n default -o yaml | \
-              curl -sS -X POST \
-                http://energetiscope-predict.default.svc.cluster.local:8000/predict/from-yaml \
-                -H 'Content-Type: text/plain' --data-binary @- | jq .
-```
-
-The `energetiscope-reader` ServiceAccount needs `get` on `deployments` in the target namespace.
-
-## Configuration Reference
+`InferenceRequest` requires `namespace`, `workload_kind`, `workload_name`, and `containers`
+(each with `name` and `image`; optional `req_cpu_mcpu`, `req_mem_mib`, `lim_cpu_mcpu`,
+`lim_mem_mib`). See [`app/models.py`](app/models.py).
 
 | Variable | Default | Description |
 |---|---|---|
-| `ENCODER_PATH` | `/artifacts/encoder.joblib` | Encoder artifact path |
-| `MODEL_PATH` | `/artifacts/knn_energy.joblib` | Trained model path |
-| `KUBECONFIG` | autodetect | Out-of-cluster kubeconfig path |
-| `K8S_CA_FILE` | — | CA certificate file for TLS |
+| `ENCODER_PATH` | `/artifacts/encoder.joblib` | Encoder artifact |
+| `MODEL_PATH` | `/artifacts/knn_energy.joblib` | Trained model |
+| `KUBECONFIG` | autodetect | Out-of-cluster kubeconfig |
+| `K8S_CA_FILE` | — | CA certificate for TLS |
 | `VERIFY_SSL` | client default | Force SSL verification on/off |
 
-In Kubernetes, manifests mount a PVC at `/app/artifacts` and set the above env vars automatically.
+## Limitations — read before trusting a number
 
-## Additional Documentation
+This is **research code from an in-progress paper**. The boundaries matter more than the
+headline:
 
-| File | Description |
+- **Models are hardware-specific.** The bundled model was trained on a single bare-metal node
+  using Intel RAPL. Energy is as much a property of the machine as of the workload — retrain
+  on your own cluster rather than reusing ours.
+- **Kepler needs RAPL.** On most cloud VMs (including AKS) the RAPL MSRs are not exposed, so
+  Kepler falls back to an estimation model and may attribute **zero** energy to pods. Ground
+  truth requires bare metal or a host exposing RAPL.
+- **The benchmark is small and narrow.** 1,422 measurements, but only **10 workload groups**,
+  and only **4 of 9 feature columns actually vary** — the categorical block is largely
+  degenerate. R² = 0.917 is a real number on this data; it is not evidence of generality.
+- **`join_features_labels.py` currently over-joins.** Its `train_rows*.parquet` outputs
+  contain many-to-many duplicate rows (14,906 rows where the correct inner merge yields
+  1,422) and models trained on them score *worse than the mean predictor*. Use
+  `eval/eval_bench_grouped.py`, which merges correctly, until this is fixed
+  ([issue](https://github.com/MSKazemi/EnergetiScope/issues)).
+- **Specification-only.** Two workloads with identical specs but different real load look
+  identical to the model. It predicts declared intent, not runtime behaviour.
+
+## Repository layout
+
+| Path | Contents |
 |---|---|
-| `ROADMAP.md` | Detailed project progress tracking and next steps |
-| `TECHNICAL_DOCUMENTATION.md` | In-depth technical reference (pipeline, data formats, model) |
-| `DISCUSSION_LOG.md` | Key decisions and findings from working sessions |
-| `cluster-setup.md` | Helm install commands for Prometheus + Kepler |
-| `k8s-collect-guide.md` | Detailed guide for the k8s_collect.py tool |
+| `app/` | Pipeline stages and the FastAPI service |
+| `eval/` | Evaluation and reproduction scripts |
+| `data/bench/` | Benchmark features, labels, and encoders |
+| `k8s/` | Manifests: batch Jobs for the pipeline, Deployments for API + collector |
+| `manifests/bench/` | Workload manifests used to generate the benchmark |
+
+Cluster setup and deployment: [`cluster-setup.md`](cluster-setup.md),
+[`k8s-collect-guide.md`](k8s-collect-guide.md),
+[`COLLECTION_RUNBOOK.md`](COLLECTION_RUNBOOK.md),
+[`TECHNICAL_DOCUMENTATION.md`](TECHNICAL_DOCUMENTATION.md).
+
+> External-validation scripts in `eval/` expect the third-party dataset
+> [Zenodo 14332659](https://doi.org/10.5281/zenodo.14332659) in `data/external/`. It is not
+> redistributed here — download it separately.
+
+## Contributing
+
+Contributions are very welcome — especially **energy measurements from hardware other than
+ours**, which is the single most valuable thing anyone can add.
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) and the
+[good first issues](https://github.com/MSKazemi/EnergetiScope/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+
+## Citing
+
+See [`CITATION.cff`](CITATION.cff), or the "Cite this repository" button on GitHub.
 
 ## License
 
-> TODO: Add a `LICENSE` file (recommended: Apache-2.0 or MIT).
-
-## Cite
-
-```bibtex
-@misc{EnergetiScope2025,
-  title  = {EnergetiScope: Machine Learning-Based Energy Prediction for Kubernetes Workloads},
-  author = {TODO},
-  year   = {2025},
-  doi    = {TODO}
-}
-```
+[Apache-2.0](LICENSE) — see [`NOTICE`](NOTICE).
 
 ## Acknowledgments
 
-- [Kepler](https://github.com/sustainable-computing-io/kepler) — eBPF-based energy metrics for Kubernetes
+- [Kepler](https://github.com/sustainable-computing-io/kepler) — eBPF energy metrics for Kubernetes
 - [Prometheus](https://prometheus.io) / [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts)
-
-## Contact
-
-`<CONTACT_NAME>` — `<EMAIL>`
+- [sentence-transformers](https://www.sbert.net/) — SBERT text embeddings

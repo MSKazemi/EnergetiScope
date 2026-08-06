@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-import argparse, requests, numpy as np, pandas as pd
+import argparse
+import requests
+import numpy as np
+import pandas as pd
 
 # Optional K8s fallback for owner mapping
 from kubernetes import client as k8s_client, config as k8s_config

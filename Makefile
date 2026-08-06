@@ -40,15 +40,6 @@ format: ## Format code
 eval: ## Run evaluation on all datasets
 	uv run python eval/eval_all.py
 
-##@ Paper
-.PHONY: paper
-paper: ## Build the paper PDF
-	$(MAKE) -C paper all
-
-.PHONY: paper-clean
-paper-clean: ## Clean paper build artifacts
-	$(MAKE) -C paper clean
-
 ##@ Docker
 .PHONY: docker-build
 docker-build: ## Build Docker image

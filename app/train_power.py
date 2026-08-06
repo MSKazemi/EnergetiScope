@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-import argparse, joblib, numpy as np, pandas as pd
+import argparse
+import joblib
+import numpy as np
+import pandas as pd
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.neighbors import KNeighborsRegressor

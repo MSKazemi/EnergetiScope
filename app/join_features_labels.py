@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-import argparse, re, pandas as pd
+import argparse
+import re
+import pandas as pd
 
 RS_HASH = re.compile(r"^(?P<base>.+)-[a-f0-9]{9,}$")          # e.g. myapp-75b8db778
 POD_FROM_RS = re.compile(r"^(?P<base>.+)-[a-f0-9]{9,}-[a-z0-9]{5}$")  # myapp-75b8db778-abcde

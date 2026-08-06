@@ -1,10 +1,11 @@
 # predict_service.py
-import os, uvicorn, numpy as np, pandas as pd
+import os
+import uvicorn
 from fastapi import FastAPI, Body, HTTPException
 from pydantic import BaseModel, ValidationError
-import io, yaml
+import io
+import yaml
 from joblib import load
-from typing import Dict, Any, List
 
 from k8s_encode import K8sEncoder, _flat_row    # reuse your encoder utils
 from models import InferenceRequest             # your schema

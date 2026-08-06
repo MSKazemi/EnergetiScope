@@ -1,0 +1,55 @@
+name: Feature request
+description: Propose a concrete change or addition
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For open-ended ideas, start in
+        [Discussions → Ideas](https://github.com/MSKazemi/EnergetiScope/discussions/categories/ideas).
+        Use this form when you already know roughly what should be built.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation you're stuck in, not the solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Does this change any of the following?
+      multiple: true
+      options:
+        - The feature/encoder schema
+        - The model interface or artifact format
+        - The API request/response shape
+        - Adds a new dependency
+        - None of these
+    validations:
+      required: true
+
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you be willing to implement it?
+      options:
+        - "Yes"
+        - "Yes, with guidance"
+        - "No"
+    validations:
+      required: true

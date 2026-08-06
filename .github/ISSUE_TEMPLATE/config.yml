@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or discussion
+    url: https://github.com/MSKazemi/EnergetiScope/discussions
+    about: Ask how something works, share an idea, or report a reproduction attempt. Issues are kept for actionable work.
+  - name: Security vulnerability
+    url: https://github.com/MSKazemi/EnergetiScope/security/advisories/new
+    about: Report privately. Please do not open a public issue for security problems.

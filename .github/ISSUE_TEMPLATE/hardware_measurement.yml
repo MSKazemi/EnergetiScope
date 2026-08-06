@@ -1,0 +1,64 @@
+name: Hardware measurement report
+description: Share energy measurements from your hardware — the most valuable contribution
+title: "measurements: <CPU model>"
+labels: ["measurement", "help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Thank you.** Every number in this repository comes from a single bare-metal node,
+        which is the project's biggest limitation. A second machine is worth more than most
+        code contributions.
+
+        `COLLECTION_RUNBOOK.md` walks through the collection procedure.
+
+  - type: input
+    id: cpu
+    attributes:
+      label: CPU model
+      placeholder: "Intel Xeon Gold 6338 / AMD EPYC 7763 / Ampere Altra"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: rapl
+    attributes:
+      label: Is RAPL available?
+      options:
+        - "Yes — bare metal with RAPL MSRs exposed"
+        - "No — Kepler is using its estimation model"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: input
+    id: kepler-version
+    attributes:
+      label: Kepler version
+    validations:
+      required: true
+
+  - type: input
+    id: k8s
+    attributes:
+      label: Kubernetes distribution and version
+      placeholder: "kubeadm 1.29 / k3s 1.30 / AKS 1.29"
+    validations:
+      required: true
+
+  - type: textarea
+    id: results
+    attributes:
+      label: Results
+      description: >-
+        Output of `python eval/eval_bench_grouped.py` on your own collected data, or a
+        description of what you measured.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything surprising?
+      description: Anomalies, idle power, workloads that behaved unexpectedly.

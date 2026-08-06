@@ -1,0 +1,70 @@
+name: Bug report
+description: Something in EnergetiScope is broken or behaves unexpectedly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. If your question is "how does this work?" rather than
+        "this is broken", please use
+        [Discussions](https://github.com/MSKazemi/EnergetiScope/discussions) instead.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you expected, and what happened instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Exact command(s) to reproduce
+      render: shell
+      placeholder: python eval/eval_bench_grouped.py
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Full output / traceback
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      placeholder: "3.12.3"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: "Ubuntu 24.04"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tests-pass
+    attributes:
+      label: Does `make test` pass on your clone?
+      options:
+        - "Yes"
+        - "No"
+        - "I didn't try"
+    validations:
+      required: true
+
+  - type: textarea
+    id: hardware
+    attributes:
+      label: Hardware / Kepler context
+      description: >-
+        Only if your report involves energy numbers. CPU model, whether RAPL is available,
+        Kepler version, bare metal or VM. Energy results are not interpretable without this.

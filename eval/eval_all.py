@@ -8,9 +8,6 @@ Usage:
 """
 import argparse
 import os
-import sys
-import subprocess
-import json
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -64,7 +61,6 @@ def cv5(X, y, model_factory, groups=None):
 # ── Dataset A ─────────────────────────────────────────────────────────────────
 
 def run_dataset_a(data_dir="data/external/zenodo_14332659"):
-    results = []
     csv_files = [
         os.path.join(data_dir, "data", f"_{ts}-BootstrapInitializer-containerUtilization.csv")
         for ts in ["1729087088", "1729099594", "1729113884"]
@@ -100,7 +96,6 @@ def run_dataset_a(data_dir="data/external/zenodo_14332659"):
 # ── Dataset D (PM100) ─────────────────────────────────────────────────────────
 
 def run_pm100(data_dir="data/external/pm100", download=False, max_rows=50_000):
-    import importlib.util
     parquet = os.path.join(data_dir, "job_table.parquet")
 
     if not os.path.exists(parquet):

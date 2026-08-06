@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use EnergetiScope in academic work, please cite it as below."
+title: "EnergetiScope: predicting Kubernetes workload energy consumption from workload specifications"
+abstract: >-
+  EnergetiScope predicts the energy consumption of a Kubernetes workload from its
+  specification — image, resource requests, workload kind, and labels — before the workload
+  runs. Ground-truth energy labels are collected from Kepler's eBPF power metrics via
+  Prometheus. Workload specifications are encoded as a combination of optional SBERT text
+  embeddings, numeric resource features, and one-hot categorical features, and a regressor is
+  trained with workload-grouped cross-validation.
+type: software
+authors:
+  - family-names: "Seyedkazemi Ardebili"
+    given-names: "Mohsen"
+    email: "mohsen.seyedkazemi@gmail.com"
+repository-code: "https://github.com/MSKazemi/EnergetiScope"
+url: "https://github.com/MSKazemi/EnergetiScope"
+license: Apache-2.0
+keywords:
+  - kubernetes
+  - energy-efficiency
+  - green-computing
+  - machine-learning
+  - kepler
+  - ebpf
+  - sustainable-computing
+  - energy-prediction

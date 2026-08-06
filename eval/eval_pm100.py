@@ -85,7 +85,7 @@ def download_pm100(dest_dir):
     if os.path.exists(dest):
         print(f"  [SKIP] Already downloaded: {dest}")
         return dest
-    print(f"  Downloading PM100 from Zenodo (~287 MB)...")
+    print("  Downloading PM100 from Zenodo (~287 MB)...")
     with requests.get(ZENODO_URL, stream=True, timeout=120) as r:
         r.raise_for_status()
         total = int(r.headers.get("content-length", 0))
@@ -180,7 +180,7 @@ def run_evaluation(df):
     # Subsample for speed if very large
     if len(df) > 50_000:
         df_eval = df.sample(50_000, random_state=42)
-        print(f"  Subsampled to 50,000 rows for CV speed")
+        print("  Subsampled to 50,000 rows for CV speed")
     else:
         df_eval = df.copy()
 
@@ -252,11 +252,11 @@ def main():
     print("Summary: Dataset D (PM100)")
     print("="*65)
     knn5 = results["KNN_k5"]
-    print(f"  KNN k=5:")
+    print("  KNN k=5:")
     print(f"    MAE  = {knn5['MAE'][0]:.2f} W   RMSE = {knn5['RMSE'][0]:.2f} W")
     print(f"    R²   = {knn5['R2'][0]:.4f}      MAPE = {knn5['MAPE'][0]:.1f}%")
     lr = results["LinearRegression"]
-    print(f"  Linear Regression:")
+    print("  Linear Regression:")
     print(f"    MAE  = {lr['MAE'][0]:.2f} W   R²   = {lr['R2'][0]:.4f}")
     print()
 

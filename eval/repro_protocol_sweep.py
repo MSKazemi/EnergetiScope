@@ -6,7 +6,6 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.model_selection import GroupKFold, KFold
 from sklearn.neighbors import KNeighborsRegressor
@@ -46,7 +45,7 @@ for sname, loader, target in itertools.product(
         SOURCES, [None], ["energy_step_j", "avg_power_w", "total_energy_j"]):
     try:
         df = SOURCES[sname](target)
-    except Exception as e:
+    except Exception:
         continue
     if len(df) < 10:
         continue

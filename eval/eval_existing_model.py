@@ -10,8 +10,6 @@ Usage:
                                         --encoder data/encoder.joblib
 """
 import argparse
-import os
-import sys
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -132,7 +130,7 @@ def main():
         print(f"  [Mean Baseline]  MAE = {mean_mae:.4f}")
 
     # --- Ablation: k sensitivity ---
-    print(f"\n  k-sensitivity (5-fold, all data):")
+    print("\n  k-sensitivity (5-fold, all data):")
     kf = KFold(n_splits=5, shuffle=True, random_state=42)
     for k in [1, 3, 5, 10, 15]:
         maes = []
@@ -143,7 +141,7 @@ def main():
         print(f"    k={k:2d}  MAE={np.mean(maes):.4f} ± {np.std(maes):.4f}")
 
     # --- Per-workload breakdown ---
-    print(f"\n  Per-workload median prediction (train-on-all):")
+    print("\n  Per-workload median prediction (train-on-all):")
     m_full = KNeighborsRegressor(n_neighbors=5, metric="cosine")
     m_full.fit(X, y)
     preds = m_full.predict(X)

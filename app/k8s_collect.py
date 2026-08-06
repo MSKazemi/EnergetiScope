@@ -15,7 +15,6 @@ except Exception:
 from kubernetes import client, config, watch
 from kubernetes.config.config_exception import ConfigException
 from kubernetes.client.exceptions import ApiException
-from pydantic import ValidationError
 
 # If you have your logger, you can import it; otherwise basic prints will work.
 try:
@@ -279,7 +278,7 @@ def _load_k8s_config(kubeconfig: Optional[str] = None) -> None:
         try:
             config.load_incluster_config()
             logger.info("Loaded in-cluster config.")
-        except ConfigException as e:
+        except ConfigException:
             logger.error("Failed to load any Kubernetes config.")
             raise
 

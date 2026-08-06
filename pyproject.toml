@@ -24,3 +24,19 @@ dev = [
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint.per-file-ignores]
+# Evaluation scripts intentionally call warnings.filterwarnings() before importing the
+# heavy scientific stack, which trips "import not at top of file".
+"eval/*.py" = ["E402", "E741", "E731"]
+# `l` is used for the labels dataframe throughout the eval/encode code.
+"app/k8s_encode.py" = ["E701"]
+# Exploratory notebooks import where it reads best, not at the top of every cell.
+"*.ipynb" = ["E402"]
+
+[tool.pytest.ini_options]
+# `app/` modules import each other as top-level modules (e.g. `from k8s_encode import ...`),
+# while the tests import them as `app.<module>`. Put both the repo root and `app/` on
+# sys.path so `uv run pytest` works the same way `python -m pytest` does.
+pythonpath = [".", "app"]
+testpaths = ["app"]

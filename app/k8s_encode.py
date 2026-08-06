@@ -4,15 +4,17 @@ K8s InferenceRequest encoder:
 - Fit:   k8s_encode.py fit --input data.ndjson --out encoder.joblib [--no-sbert]
 - Trans: k8s_encode.py transform --input data.ndjson --encoder encoder.joblib --out features.parquet
 """
-import argparse, json, os, sys, hashlib
+import argparse
+import json
+import os
+import sys
+import hashlib
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Any, Tuple
 
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
 from joblib import dump, load
 
 # --- optional SBERT (disable with --no-sbert)

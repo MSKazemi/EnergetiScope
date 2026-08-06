@@ -83,7 +83,7 @@ This produces a training dataset where each row contains:
 
 ### Stage 5: Model Training
 
-The training module (`train_power.py`) implements a KNN regressor with cosine similarity metric. The training process employs group-aware cross-validation to prevent data leakage:
+The training module (`train_power.py`) supports four regressor families via `--model {gbt,rf,linear,knn}`; gradient-boosted trees are the default and the most accurate on the benchmark. The training process employs group-aware cross-validation to prevent data leakage:
 
 1. **Grouping**: Workloads are grouped by `workload_name` to ensure that all samples from the same workload appear exclusively in either the training or validation set.
 

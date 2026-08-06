@@ -14,11 +14,10 @@ warnings.filterwarnings("ignore")
 import numpy as np
 import pandas as pd
 from sklearn.neighbors import KNeighborsRegressor
-from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import KFold, GroupKFold
 from sklearn.metrics import mean_absolute_error, r2_score
-import json, csv, os
+import os
 
 DATA_DIR = "data/bench"
 OUT_CSV = "eval/model_experiments_results.csv"
@@ -112,7 +111,7 @@ def main():
         print(f"  n={len(y)}, groups={n_groups}, y range=[{y.min():.1f}, {y.max():.1f}]")
 
         # --- Experiment 1: KNN k-sensitivity ---
-        print(f"\n  [Exp 1] KNN k-sensitivity (5-fold CV):")
+        print("\n  [Exp 1] KNN k-sensitivity (5-fold CV):")
         for k in [1, 3, 5, 7, 10, 15, 20]:
             res = cv_evaluate(
                 KNeighborsRegressor,
@@ -127,7 +126,7 @@ def main():
             })
 
         # Also GroupKFold for best k values
-        print(f"\n  [Exp 1b] KNN k-sensitivity (GroupKFold):")
+        print("\n  [Exp 1b] KNN k-sensitivity (GroupKFold):")
         for k in [3, 5, 10]:
             res = cv_evaluate(
                 KNeighborsRegressor,
@@ -142,7 +141,7 @@ def main():
             })
 
         # --- Experiment 2: Gradient Boosted Trees ---
-        print(f"\n  [Exp 2] Gradient Boosted Trees (5-fold CV):")
+        print("\n  [Exp 2] Gradient Boosted Trees (5-fold CV):")
         for n_est, lr, depth in [(100, 0.1, 5), (200, 0.1, 5), (200, 0.05, 7)]:
             label = f"GBT_{n_est}t_lr{lr}_d{depth}"
             res = cv_evaluate(
@@ -159,7 +158,7 @@ def main():
             })
 
         # GBT GroupKFold
-        print(f"\n  [Exp 2b] GBT best config (GroupKFold):")
+        print("\n  [Exp 2b] GBT best config (GroupKFold):")
         for n_est, lr, depth in [(200, 0.1, 5)]:
             label = f"GBT_{n_est}t_lr{lr}_d{depth}"
             res = cv_evaluate(
@@ -176,7 +175,7 @@ def main():
             })
 
         # --- Experiment 3: Uncertainty estimation ---
-        print(f"\n  [Exp 3] KNN prediction intervals (k=5):")
+        print("\n  [Exp 3] KNN prediction intervals (k=5):")
         kf = KFold(n_splits=5, shuffle=True, random_state=42)
         all_coverages = []
         all_widths = []
