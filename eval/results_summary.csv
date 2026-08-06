@@ -1,4 +1,11 @@
-dataset,domain,n_samples,n_workloads,knn_k5_mae,knn_k5_rmse,knn_k5_r2,knn_k5_mape,lr_mae,lr_r2
-Zenodo:14332659 (BootstrapInitializer),K8s / stress-ng (external),4920,1,11.4641,23.9649,0.9215,2.95,35.3688,0.7576
-EnergetiScope Bench (n1 bare-metal RAPL),K8s / manifest→energy (primary),711,10,240.1,,0.9787,2.7,505.0,0.9587
-EnergetiScope Bench (workload-level),K8s / manifest→energy (aggregated),10,10,216.7,,0.9949,4.1,,
+dataset,domain,protocol,n_samples,n_workloads,model,mae,rmse,r2,mape
+EnergetiScope Bench (n1 bare-metal RAPL),K8s / manifest→energy (primary),GroupKFold pooled OOF,711,10,Gradient Boosted Trees,841.0,1189.8,0.9230,10.68
+EnergetiScope Bench (n1 bare-metal RAPL),K8s / manifest→energy (primary),GroupKFold pooled OOF,711,10,Random Forest,924.7,1285.5,0.9101,11.71
+EnergetiScope Bench (n1 bare-metal RAPL),K8s / manifest→energy (primary),GroupKFold pooled OOF,711,10,Linear Regression,1479.7,1910.1,0.8016,15.49
+EnergetiScope Bench (n1 bare-metal RAPL),K8s / manifest→energy (primary),GroupKFold pooled OOF,711,10,KNN k=5 cosine,1407.5,2071.0,0.7668,16.99
+EnergetiScope Bench (workload-level),K8s / manifest→energy (aggregated),GroupKFold OOF averaged per workload,10,10,Gradient Boosted Trees,622.7,,0.9612,8.61
+EnergetiScope Bench (workload-level),K8s / manifest→energy (aggregated),GroupKFold OOF averaged per workload,10,10,Random Forest,679.2,,0.9530,9.33
+EnergetiScope Bench (workload-level),K8s / manifest→energy (aggregated),GroupKFold OOF averaged per workload,10,10,Linear Regression,1045.5,,0.9005,17.32
+EnergetiScope Bench (workload-level),K8s / manifest→energy (aggregated),GroupKFold OOF averaged per workload,10,10,KNN k=5 cosine,959.3,,0.8826,12.34
+Zenodo:14332659 (BootstrapInitializer),K8s / runtime CPU (external algorithm check only),KFold contiguous (single workload; grouping impossible),4920,1,KNN k=5,11.82,,0.9200,3.03
+Zenodo:14332659 (BootstrapInitializer),K8s / runtime CPU (external algorithm check only),KFold shuffled (single workload; grouping impossible),4920,1,KNN k=5,11.46,,0.9210,2.95

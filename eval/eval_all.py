@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import KFold
+from sklearn.model_selection import GroupKFold, KFold
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler
 
@@ -30,18 +30,35 @@ def mape(y_true, y_pred, eps=1e-6):
     return 100.0 * np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask]))
 
 
-def cv5(X, y, model_factory):
-    kf = KFold(n_splits=5, shuffle=True, random_state=42)
-    maes, rmses, r2s, mapes = [], [], [], []
-    for tr, va in kf.split(X, y):
+def cv5(X, y, model_factory, groups=None):
+    """5-fold CV returning metrics on POOLED out-of-fold predictions.
+
+    If ``groups`` is given, folds are split with GroupKFold so that no
+    group appears in both train and validation. Pass groups whenever rows
+    are repeated measurements of the same entity (e.g. many time steps of
+    one Kubernetes workload) -- otherwise the same workload lands on both
+    sides of the split and the resulting score is optimistic.
+
+    Metrics are computed once over the pooled out-of-fold vector rather
+    than averaged per fold: per-fold R^2 is unstable when a validation
+    fold has near-zero label variance.
+    """
+    if groups is not None:
+        n_groups = len(np.unique(groups))
+        splitter = GroupKFold(n_splits=min(5, n_groups)).split(X, y, groups)
+    else:
+        splitter = KFold(n_splits=5, shuffle=True, random_state=42).split(X, y)
+
+    oof = np.zeros_like(np.asarray(y, dtype=float))
+    for tr, va in splitter:
         m = model_factory()
         m.fit(X[tr], y[tr])
-        p = m.predict(X[va])
-        maes.append(mean_absolute_error(y[va], p))
-        rmses.append(np.sqrt(mean_squared_error(y[va], p)))
-        r2s.append(r2_score(y[va], p))
-        mapes.append(mape(y[va], p))
-    return np.mean(maes), np.mean(rmses), np.mean(r2s), np.mean(mapes)
+        oof[va] = m.predict(X[va])
+
+    return (mean_absolute_error(y, oof),
+            float(np.sqrt(mean_squared_error(y, oof))),
+            r2_score(y, oof),
+            mape(y, oof))
 
 
 # ── Dataset A ─────────────────────────────────────────────────────────────────
@@ -170,9 +187,12 @@ def run_existing_model(feat_path="data/features.parquet",
 
     X = np.stack(df["features"].to_numpy())
     y = df["energy_step_j"].astype(float).values
+    # rows are repeated time steps of the same workload -> must group
+    groups = df["workload_name"].astype(str).values
 
-    knn_mae, knn_rmse, knn_r2, knn_mape = cv5(X, y, lambda: KNeighborsRegressor(n_neighbors=5, metric="cosine"))
-    lr_mae,  lr_rmse,  lr_r2,  lr_mape  = cv5(X, y, LinearRegression)
+    knn_mae, knn_rmse, knn_r2, knn_mape = cv5(
+        X, y, lambda: KNeighborsRegressor(n_neighbors=5, metric="cosine"), groups)
+    lr_mae,  lr_rmse,  lr_r2,  lr_mape  = cv5(X, y, LinearRegression, groups)
 
     return {
         "dataset": "EnergetiScope\n(in-cluster Kepler)",
