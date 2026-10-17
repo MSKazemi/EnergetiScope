@@ -186,3 +186,9 @@ See [`CITATION.cff`](CITATION.cff), or the "Cite this repository" button on GitH
 - [Kepler](https://github.com/sustainable-computing-io/kepler) — eBPF energy metrics for Kubernetes
 - [Prometheus](https://prometheus.io) / [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts)
 - [sentence-transformers](https://www.sbert.net/) — SBERT text embeddings
+
+<!-- legal-notice: start -->
+### Legal notice and responsible use
+
+The materials in this repository are made available without warranties to the extent permitted by applicable law. **Please read the [Disclaimer and Responsible-Use Notice](DISCLAIMER.md)** before relying on or deploying them. This notice does not change any existing software license or limit rights that cannot legally be waived.
+<!-- legal-notice: end -->
